@@ -1,0 +1,56 @@
+Keyword,Category,Priority,Rationale,Expected_Articles
+"random forest algorithm pseudocode",Core Algorithm - Random Forest,Critical,"Random Forest is a primary example in the project. Need detailed algorithm descriptions and pseudocode.",30-50
+"XGBoost algorithm implementation",Core Algorithm - XGBoost,Critical,"XGBoost is a primary example. Chen & Guestrin 2016 paper and implementation details.",20-40
+"decision tree CART algorithm",Foundation - Decision Trees,Critical,"Foundation for ensemble methods. CART algorithm pseudocode and splitting criteria.",30-60
+"gradient boosting algorithm",Core Algorithm - Gradient Boosting,High,"Foundation for XGBoost. Friedman's gradient boosting machine papers.",25-50
+"ensemble methods machine learning",Paradigm - Ensemble Learning,High,"Theoretical framework for Random Forest and boosting algorithms.",40-80
+"bagging bootstrap aggregating",Foundation - Bagging,High,"Breiman's bagging method - foundation for Random Forest.",20-40
+"feature importance machine learning",Interpretation - Feature Importance,High,"Feature importance calculation in tree-based models.",30-60
+"Gini impurity information gain",Foundation - Splitting Criteria,High,"Decision tree splitting criteria used in Random Forest.",20-40
+"cross-validation machine learning",Methodology - Validation,High,"Model validation techniques for machine learning algorithms.",40-80
+"hyperparameter tuning optimization",Methodology - Optimization,Medium,"Hyperparameter optimization for machine learning models.",30-60
+"neural networks backpropagation",Core Algorithm - Neural Networks,High,"Deep learning foundation algorithm for potential examples.",40-80
+"convolutional neural networks architecture",Core Algorithm - Deep Learning,Medium,"CNN architecture and algorithms for computer vision.",30-60
+"recurrent neural networks LSTM",Core Algorithm - Deep Learning,Medium,"RNN and LSTM algorithms for sequence data.",25-50
+"support vector machines algorithm",Core Algorithm - SVM,High,"Classic machine learning algorithm with clear mathematical formulation.",30-60
+"k-nearest neighbors algorithm",Core Algorithm - Instance-based,Medium,"Simple yet effective algorithm suitable for pseudocode.",25-50
+"k-means clustering algorithm",Core Algorithm - Clustering,High,"Unsupervised learning algorithm with clear iterative steps.",30-60
+"principal component analysis",Core Algorithm - Dimensionality Reduction,High,"Linear dimensionality reduction with clear mathematical steps.",25-50
+"logistic regression algorithm",Core Algorithm - Classification,High,"Fundamental classification algorithm with gradient descent.",30-60
+"linear regression algorithm",Core Algorithm - Regression,High,"Foundation of statistical learning with closed-form solution.",25-50
+"naive Bayes classifier",Core Algorithm - Probabilistic,Medium,"Probabilistic classifier with simple mathematical formulation.",20-40
+"AdaBoost adaptive boosting",Core Algorithm - Boosting,High,"Another boosting algorithm for comparison with XGBoost.",15-30
+"LightGBM gradient boosting",Core Algorithm - Boosting,Medium,"Modern gradient boosting variant for comparison.",10-25
+"attention mechanism transformer",Core Algorithm - Deep Learning,High,"Modern attention-based architecture fundamentals.",25-50
+"A* search algorithm",Core Algorithm - Search,High,"Pathfinding algorithm with clear pseudocode structure.",20-40
+"Dijkstra shortest path",Core Algorithm - Graph,High,"Classic graph algorithm with clear steps.",25-50
+"breadth-first search algorithm",Foundation - Graph Traversal,High,"Fundamental graph traversal algorithm.",20-40
+"depth-first search algorithm",Foundation - Graph Traversal,High,"Fundamental graph traversal algorithm.",20-40
+"dynamic programming algorithms",Paradigm - Dynamic Programming,High,"DP technique with examples like Fibonacci, knapsack.",30-60
+"quicksort algorithm",Foundation - Sorting,High,"Divide-and-conquer sorting algorithm with clear pseudocode.",25-50
+"merge sort algorithm",Foundation - Sorting,High,"Classic sorting algorithm demonstrating recursion.",20-40
+"binary search algorithm",Foundation - Searching,High,"Fundamental search algorithm with clear structure.",25-50
+"hash table algorithm",Foundation - Data Structures,Medium,"Hash table implementation and collision handling.",20-40
+"balanced binary tree AVL",Foundation - Data Structures,Medium,"Self-balancing tree algorithms.",15-30
+"heap sort algorithm",Foundation - Sorting,Medium,"Heap-based sorting and priority queue operations.",15-30
+"minimum spanning tree algorithm",Core Algorithm - Graph,Medium,"MST algorithms with greedy approach.",15-30
+"traveling salesman problem",Core Algorithm - Optimization,Low,"Classic NP-hard problem with various algorithms.",10-20
+"knapsack problem algorithm",Core Algorithm - Dynamic Programming,Medium,"Classic DP problem with clear recursive structure.",15-30
+"topological sort algorithm",Core Algorithm - Graph,Medium,"Directed acyclic graph ordering algorithm.",10-20
+"expectation maximization algorithm",Core Algorithm - Statistical,Medium,"Iterative statistical algorithm for latent variables.",15-30
+"Q-learning reinforcement learning",Core Algorithm - Reinforcement Learning,Medium,"Classic RL algorithm with clear update rules.",20-40
+"gradient descent optimization",Foundation - Optimization,Critical,"Foundation for machine learning training algorithms.",40-80
+"stochastic gradient descent",Foundation - Optimization,High,"Fundamental optimization for neural networks.",30-60
+"Adam optimizer algorithm",Foundation - Optimization,High,"Modern adaptive learning rate optimization.",25-50
+"batch normalization",Deep Learning - Normalization,Medium,"Neural network training technique.",20-40
+"dropout regularization",Deep Learning - Regularization,Medium,"Regularization technique for neural networks.",15-30
+"BERT transformer",NLP - Transformers,High,"Modern NLP architecture fundamentals.",25-50
+"variational autoencoder",Deep Learning - Generative,Medium,"Generative model with clear probabilistic formulation.",15-30
+"generative adversarial network",Deep Learning - Generative,High,"Adversarial training algorithm.",25-50
+"learning rate scheduling",Foundation - Optimization,Medium,"Learning rate adjustment strategies.",15-30
+"L1 L2 regularization",Foundation - Regularization,High,"Regularization techniques and their effects.",25-50
+"confusion matrix metrics",Methodology - Evaluation,High,"Classification evaluation metrics.",20-40
+"ROC curve AUC",Methodology - Evaluation,High,"Binary classification evaluation.",20-40
+"time complexity analysis",Theory - Complexity,High,"Algorithm complexity analysis and Big-O notation.",30-60
+"NP-completeness theory",Theory - Complexity,Low,"Computational complexity theory.",10-20
+"transfer learning",Methodology - Learning Paradigm,Medium,"Transfer learning procedures.",20-40

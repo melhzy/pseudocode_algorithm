@@ -1,0 +1,338 @@
+===============================================
+XGBOOST ALGORITHM - PSEUDOCODE
+===============================================
+
+Reference Material:
+------------------
+This pseudocode implementation references concepts from:
+- Heineman, G.T., Pollice, G., & Selkow, S. (2009). "Algorithms in a Nutshell" 
+  O'Reilly Media, Inc.
+  
+Note: The pseudocode presented here is an original implementation
+created for educational purposes, inspired by general algorithmic
+principles discussed in the referenced work and standard machine
+learning literature.
+
+Overview:
+---------
+XGBoost (Extreme Gradient Boosting) is an optimized gradient boosting
+algorithm that builds an ensemble of decision trees sequentially,
+where each new tree corrects errors made by previous trees.
+
+Key Concepts:
+- Gradient boosting framework
+- Regularization to prevent overfitting
+- Second-order Taylor expansion for optimization
+- Tree pruning and parallel processing
+- Handling missing values
+
+===============================================
+ALGORITHM: XGBoost Training
+===============================================
+
+INPUT:
+  D: training dataset {(x₁, y₁), (x₂, y₂), ..., (xₙ, yₙ)}
+  L: loss function (e.g., squared error, log loss)
+  T: number of boosting rounds (trees)
+  η: learning rate (shrinkage parameter)
+  λ: L2 regularization term
+  γ: minimum loss reduction for split
+  max_depth: maximum tree depth
+
+OUTPUT:
+  Model: ensemble of T trees with predictions
+
+PROCEDURE XGBoostTrain(D, L, T, η, λ, γ, max_depth):
+  // Initialize predictions with constant value
+  F₀(x) ← argmin_c ∑ᵢ L(yᵢ, c)
+  
+  // Initialize prediction for each sample
+  FOR i = 1 TO n DO
+    pred[i] ← F₀(xᵢ)
+  END FOR
+  
+  trees ← empty list
+  
+  // Build T trees sequentially
+  FOR t = 1 TO T DO
+    // Compute first and second order gradients
+    g ← empty array[n]
+    h ← empty array[n]
+    
+    FOR i = 1 TO n DO
+      // First order gradient (negative gradient)
+      g[i] ← -∂L(yᵢ, pred[i])/∂pred[i]
+      
+      // Second order gradient (Hessian)
+      h[i] ← ∂²L(yᵢ, pred[i])/∂pred[i]²
+    END FOR
+    
+    // Build tree using gradient statistics
+    tree_t ← BuildTree(D, g, h, max_depth, λ, γ)
+    
+    // Update predictions with learning rate
+    FOR i = 1 TO n DO
+      pred[i] ← pred[i] + η × tree_t.Predict(xᵢ)
+    END FOR
+    
+    trees.append(tree_t)
+  END FOR
+  
+  RETURN trees
+END PROCEDURE
+
+
+===============================================
+ALGORITHM: Build Tree for XGBoost
+===============================================
+
+PROCEDURE BuildTree(D, g, h, max_depth, λ, γ):
+  root ← BuildNode(D, g, h, 0, max_depth, λ, γ)
+  RETURN root
+END PROCEDURE
+
+PROCEDURE BuildNode(D, g, h, depth, max_depth, λ, γ):
+  node ← new TreeNode()
+  
+  // Calculate node weight using gradient statistics
+  G ← ∑ᵢ g[i] for all i in D
+  H ← ∑ᵢ h[i] for all i in D
+  node.weight ← -G / (H + λ)
+  
+  // Calculate current node score
+  current_score ← -0.5 × G² / (H + λ)
+  
+  // Base cases - create leaf
+  IF depth ≥ max_depth OR |D| < min_samples THEN
+    node.is_leaf ← TRUE
+    RETURN node
+  END IF
+  
+  // Find best split
+  best_gain ← -∞
+  best_feature ← NULL
+  best_threshold ← NULL
+  best_D_left ← NULL
+  best_D_right ← NULL
+  
+  FOR EACH feature IN features DO
+    // Sort samples by feature value
+    sorted_indices ← SortByFeature(D, feature)
+    
+    G_L ← 0  // Left gradient sum
+    H_L ← 0  // Left hessian sum
+    
+    FOR EACH split_point IN sorted_indices DO
+      // Add current sample to left partition
+      i ← split_point
+      G_L ← G_L + g[i]
+      H_L ← H_L + h[i]
+      
+      G_R ← G - G_L  // Right gradient sum
+      H_R ← H - H_L  // Right hessian sum
+      
+      // Calculate gain using regularized objective
+      score_left ← -0.5 × G_L² / (H_L + λ)
+      score_right ← -0.5 × G_R² / (H_R + λ)
+      gain ← score_left + score_right - current_score - γ
+      
+      // Update best split if gain is improved
+      IF gain > best_gain AND H_L ≥ 1 AND H_R ≥ 1 THEN
+        best_gain ← gain
+        best_feature ← feature
+        best_threshold ← (D[split_point][feature] + 
+                         D[split_point+1][feature]) / 2
+        best_D_left ← left partition samples
+        best_D_right ← right partition samples
+      END IF
+    END FOR
+  END FOR
+  
+  // If no good split found (gain ≤ 0), create leaf
+  IF best_gain ≤ 0 OR best_feature = NULL THEN
+    node.is_leaf ← TRUE
+    RETURN node
+  END IF
+  
+  // Set split criteria
+  node.is_leaf ← FALSE
+  node.feature ← best_feature
+  node.threshold ← best_threshold
+  
+  // Create gradient/hessian arrays for child nodes
+  g_left, h_left ← ExtractGradients(g, h, best_D_left)
+  g_right, h_right ← ExtractGradients(g, h, best_D_right)
+  
+  // Recursively build child nodes
+  node.left ← BuildNode(best_D_left, g_left, h_left, 
+                        depth + 1, max_depth, λ, γ)
+  node.right ← BuildNode(best_D_right, g_right, h_right, 
+                         depth + 1, max_depth, λ, γ)
+  
+  RETURN node
+END PROCEDURE
+
+
+===============================================
+ALGORITHM: XGBoost Prediction
+===============================================
+
+PROCEDURE XGBoostPredict(trees, x, η):
+  // Start with initial prediction (usually 0)
+  prediction ← 0
+  
+  // Add contribution from each tree
+  FOR EACH tree IN trees DO
+    prediction ← prediction + η × TreePredict(tree, x)
+  END FOR
+  
+  RETURN prediction
+END PROCEDURE
+
+PROCEDURE TreePredict(node, x):
+  IF node.is_leaf THEN
+    RETURN node.weight
+  END IF
+  
+  // Navigate tree based on feature value
+  IF x[node.feature] ≤ node.threshold THEN
+    RETURN TreePredict(node.left, x)
+  ELSE
+    RETURN TreePredict(node.right, x)
+  END IF
+END PROCEDURE
+
+
+===============================================
+HELPER PROCEDURES
+===============================================
+
+PROCEDURE CalculateGradient(loss_function, y_true, y_pred):
+  // For squared error: gradient = -(y_true - y_pred)
+  // For logistic loss: gradient = -(y_true - sigmoid(y_pred))
+  
+  CASE loss_function OF
+    "squared_error":
+      RETURN -(y_true - y_pred)
+    
+    "logistic":
+      prob ← 1 / (1 + exp(-y_pred))
+      RETURN -(y_true - prob)
+    
+    "softmax":
+      probs ← Softmax(y_pred)
+      RETURN -(y_true - probs)
+  END CASE
+END PROCEDURE
+
+PROCEDURE CalculateHessian(loss_function, y_true, y_pred):
+  // For squared error: hessian = 1
+  // For logistic loss: hessian = prob × (1 - prob)
+  
+  CASE loss_function OF
+    "squared_error":
+      RETURN 1
+    
+    "logistic":
+      prob ← 1 / (1 + exp(-y_pred))
+      RETURN prob × (1 - prob)
+    
+    "softmax":
+      probs ← Softmax(y_pred)
+      RETURN probs × (1 - probs)
+  END CASE
+END PROCEDURE
+
+
+===============================================
+ADVANCED FEATURES
+===============================================
+
+// Column (Feature) Subsampling
+PROCEDURE ColumnSubsample(features, colsample_rate):
+  n_features ← ⌊|features| × colsample_rate⌋
+  selected_features ← RandomSample(features, n_features)
+  RETURN selected_features
+END PROCEDURE
+
+// Handle Missing Values
+PROCEDURE FindBestSplitWithMissing(D, g, h, feature):
+  // Try assigning missing values to left
+  gain_left, threshold_left ← 
+    CalculateSplitGain(D, g, h, feature, missing_to_left=TRUE)
+  
+  // Try assigning missing values to right
+  gain_right, threshold_right ← 
+    CalculateSplitGain(D, g, h, feature, missing_to_right=TRUE)
+  
+  // Choose direction that maximizes gain
+  IF gain_left > gain_right THEN
+    RETURN gain_left, threshold_left, direction="left"
+  ELSE
+    RETURN gain_right, threshold_right, direction="right"
+  END IF
+END PROCEDURE
+
+// Pruning
+PROCEDURE PruneTree(node, γ):
+  IF node.is_leaf THEN
+    RETURN node
+  END IF
+  
+  // Recursively prune children
+  node.left ← PruneTree(node.left, γ)
+  node.right ← PruneTree(node.right, γ)
+  
+  // Calculate gain of this split
+  gain ← node.gain
+  
+  // If gain is less than γ, convert to leaf
+  IF gain < γ THEN
+    node.is_leaf ← TRUE
+    node.left ← NULL
+    node.right ← NULL
+  END IF
+  
+  RETURN node
+END PROCEDURE
+
+
+===============================================
+COMPLEXITY ANALYSIS
+===============================================
+
+Time Complexity:
+  Training: O(T × n × d × m × log(n))
+    where T = number of trees
+          n = number of samples
+          d = tree depth
+          m = number of features
+  
+  Prediction: O(T × d)
+
+Space Complexity: O(T × d × max_leaves)
+
+Advantages:
+  + Highly accurate and efficient
+  + Built-in regularization (L1, L2)
+  + Handles missing values automatically
+  + Feature importance ranking
+  + Parallel and distributed computing support
+  + Effective pruning strategies
+  + Cross-validation and early stopping
+
+Disadvantages:
+  - More hyperparameters to tune
+  - Sensitive to outliers
+  - Can overfit with too many trees
+  - Less interpretable than simple models
+  - Memory intensive for large datasets
+
+Hyperparameters:
+  - learning_rate (η): step size shrinkage (0.01-0.3)
+  - max_depth: maximum tree depth (3-10)
+  - lambda (λ): L2 regularization term
+  - gamma (γ): minimum loss reduction for split
+  - subsample: row sampling ratio (0.5-1.0)
+  - colsample_bytree: column sampling ratio (0.5-1.0)
+  - n_estimators (T): number of boosting rounds

@@ -1,0 +1,732 @@
+---
+title: "XGBoost Algorithm - Extreme Gradient Boosting"
+author: "Pseudocode Algorithm Examples"
+date: "December 9, 2025"
+output: 
+  slidy_presentation:
+    duration: 45
+    footer: "XGBoost - Extreme Gradient Boosting"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+library(xgboost)
+library(caret)
+library(ggplot2)
+```
+
+## Reference Material
+
+This presentation is based on:
+
+- Chen, T., & Guestrin, C. (2016). "XGBoost: A Scalable Tree Boosting System." In Proceedings of the 22nd ACM SIGKDD International Conference on Knowledge Discovery and Data Mining (KDD '16), 785-794. Original paper available at: `D:\Github\pseudocode_algorithm\papers\xgboost_chenAemb.pdf`
+
+- Heineman, G.T., Pollice, G., & Selkow, S. (2009). "Algorithms in a Nutshell" O'Reilly Media, Inc.
+
+The pseudocode implementations presented are original educational materials inspired by these foundational works.
+
+---
+
+## XGBoost Algorithm - Overview
+
+XGBoost (Extreme Gradient Boosting) is an optimized distributed gradient boosting library designed for efficiency, flexibility, and portability. It was introduced by Tianqi Chen and Carlos Guestrin in their award-winning 2016 KDD paper, becoming one of the most influential machine learning algorithms in data science competitions and industry applications.
+
+The algorithm implements machine learning algorithms under the Gradient Boosting framework, providing a parallel tree boosting that solves many data science problems in a fast and accurate way.
+
+---
+
+## Key Concepts
+
+XGBoost relies on several fundamental innovations from Chen & Guestrin (2016):
+
+1. **Gradient Boosting Framework** - Sequential ensemble method where each tree corrects errors of previous trees using gradient descent
+2. **Second-Order Taylor Expansion** - Uses both first (gradient) and second (Hessian) derivatives for more precise optimization
+3. **Regularization** - Built-in L1 and L2 regularization terms to prevent overfitting
+4. **Weighted Quantile Sketch** - Efficient algorithm for approximate tree learning
+5. **Sparsity-Aware Split Finding** - Native handling of missing values by learning optimal default directions
+
+These innovations create a highly efficient and accurate gradient boosting system.
+
+---
+
+## Algorithm Components
+
+XGBoost consists of three main components:
+
+1. **Training Procedure** - Sequentially builds T decision trees
+2. **Tree Building** - Constructs trees using gradient statistics and regularization
+3. **Prediction** - Aggregates predictions from all trees with learning rate
+
+---
+
+## Training Procedure - Input/Output
+
+**INPUT:**
+```
+D: training dataset {(x₁, y₁), (x₂, y₂), ..., (xₙ, yₙ)}
+L: loss function (squared error, log loss, etc.)
+T: number of boosting rounds (trees)
+η: learning rate (shrinkage parameter)
+λ: L2 regularization term
+γ: minimum loss reduction for split
+max_depth: maximum tree depth
+```
+
+**OUTPUT:**
+```
+Model: ensemble of T trees with predictions
+```
+
+---
+
+## Training Procedure - Pseudocode (1/3)
+
+```
+PROCEDURE XGBoostTrain(D, L, T, η, λ, γ, max_depth):
+  // Initialize predictions with constant value
+  F₀(x) ← argmin_c ∑ᵢ L(yᵢ, c)
+  
+  // Initialize prediction for each sample
+  FOR i = 1 TO n DO
+    pred[i] ← F₀(xᵢ)
+  END FOR
+  
+  trees ← empty list
+```
+
+The initialization step finds the optimal constant prediction that minimizes the loss function.
+
+---
+
+## Training Procedure - Pseudocode (2/3)
+
+```
+  // Build T trees sequentially
+  FOR t = 1 TO T DO
+    // Compute first and second order gradients
+    g ← empty array[n]
+    h ← empty array[n]
+    
+    FOR i = 1 TO n DO
+      // First order gradient (negative gradient)
+      g[i] ← -∂L(yᵢ, pred[i])/∂pred[i]
+      
+      // Second order gradient (Hessian)
+      h[i] ← ∂²L(yᵢ, pred[i])/∂pred[i]²
+    END FOR
+```
+
+Computing both first and second derivatives enables more accurate optimization.
+
+---
+
+## Training Procedure - Pseudocode (3/3)
+
+```
+    // Build tree using gradient statistics
+    tree_t ← BuildTree(D, g, h, max_depth, λ, γ)
+    
+    // Update predictions with learning rate
+    FOR i = 1 TO n DO
+      pred[i] ← pred[i] + η × tree_t.Predict(xᵢ)
+    END FOR
+    
+    trees.append(tree_t)
+  END FOR
+  
+  RETURN trees
+END PROCEDURE
+```
+
+The learning rate η controls the contribution of each tree, preventing overfitting.
+
+---
+
+## Tree Building - Overview
+
+The tree building procedure uses gradient statistics to find optimal splits:
+
+```
+PROCEDURE BuildTree(D, g, h, max_depth, λ, γ):
+  root ← BuildNode(D, g, h, 0, max_depth, λ, γ)
+  RETURN root
+END PROCEDURE
+```
+
+Each node is built recursively using gradient and Hessian information.
+
+---
+
+## Building a Node - Initialization
+
+```
+PROCEDURE BuildNode(D, g, h, depth, max_depth, λ, γ):
+  node ← new TreeNode()
+  
+  // Calculate node weight using gradient statistics
+  G ← ∑ᵢ g[i] for all i in D
+  H ← ∑ᵢ h[i] for all i in D
+  node.weight ← -G / (H + λ)
+  
+  // Calculate current node score
+  current_score ← -0.5 × G² / (H + λ)
+```
+
+The node weight is computed using the regularized gradient statistics.
+
+---
+
+## Building a Node - Base Cases
+
+```
+  // Base cases - create leaf
+  IF depth ≥ max_depth OR |D| < min_samples THEN
+    node.is_leaf ← TRUE
+    RETURN node
+  END IF
+```
+
+Stopping criteria prevent trees from growing too deep.
+
+---
+
+## Finding Best Split - Initialization
+
+```
+  // Find best split
+  best_gain ← -∞
+  best_feature ← NULL
+  best_threshold ← NULL
+  best_D_left ← NULL
+  best_D_right ← NULL
+  
+  FOR EACH feature IN features DO
+    // Sort samples by feature value
+    sorted_indices ← SortByFeature(D, feature)
+    
+    G_L ← 0  // Left gradient sum
+    H_L ← 0  // Left hessian sum
+```
+
+We evaluate all features to find the one that maximizes gain.
+
+---
+
+## Finding Best Split - Gain Calculation
+
+```
+    FOR EACH split_point IN sorted_indices DO
+      // Add current sample to left partition
+      i ← split_point
+      G_L ← G_L + g[i]
+      H_L ← H_L + h[i]
+      
+      G_R ← G - G_L  // Right gradient sum
+      H_R ← H - H_L  // Right hessian sum
+      
+      // Calculate gain using regularized objective
+      score_left ← -0.5 × G_L² / (H_L + λ)
+      score_right ← -0.5 × G_R² / (H_R + λ)
+      gain ← score_left + score_right - current_score - γ
+```
+
+The gain formula includes regularization term λ and complexity penalty γ.
+
+---
+
+## Finding Best Split - Update Best
+
+```
+      // Update best split if gain is improved
+      IF gain > best_gain AND H_L ≥ 1 AND H_R ≥ 1 THEN
+        best_gain ← gain
+        best_feature ← feature
+        best_threshold ← (D[split_point][feature] + 
+                         D[split_point+1][feature]) / 2
+        best_D_left ← left partition samples
+        best_D_right ← right partition samples
+      END IF
+    END FOR
+  END FOR
+```
+
+We ensure both child nodes have sufficient samples (Hessian weight ≥ 1).
+
+---
+
+## Creating Child Nodes
+
+```
+  // If no good split found (gain ≤ 0), create leaf
+  IF best_gain ≤ 0 OR best_feature = NULL THEN
+    node.is_leaf ← TRUE
+    RETURN node
+  END IF
+  
+  // Set split criteria
+  node.is_leaf ← FALSE
+  node.feature ← best_feature
+  node.threshold ← best_threshold
+```
+
+If no split improves the objective, we create a leaf node.
+
+---
+
+## Recursive Tree Building
+
+```
+  // Create gradient/hessian arrays for child nodes
+  g_left, h_left ← ExtractGradients(g, h, best_D_left)
+  g_right, h_right ← ExtractGradients(g, h, best_D_right)
+  
+  // Recursively build child nodes
+  node.left ← BuildNode(best_D_left, g_left, h_left, 
+                        depth + 1, max_depth, λ, γ)
+  node.right ← BuildNode(best_D_right, g_right, h_right, 
+                         depth + 1, max_depth, λ, γ)
+  
+  RETURN node
+END PROCEDURE
+```
+
+Child nodes are built recursively with their respective gradient statistics.
+
+---
+
+## Prediction - Ensemble
+
+```
+PROCEDURE XGBoostPredict(trees, x, η):
+  // Start with initial prediction (usually 0)
+  prediction ← 0
+  
+  // Add contribution from each tree
+  FOR EACH tree IN trees DO
+    prediction ← prediction + η × TreePredict(tree, x)
+  END FOR
+  
+  RETURN prediction
+END PROCEDURE
+```
+
+Final prediction is the sum of all tree predictions scaled by learning rate.
+
+---
+
+## Prediction - Single Tree
+
+```
+PROCEDURE TreePredict(node, x):
+  IF node.is_leaf THEN
+    RETURN node.weight
+  END IF
+  
+  // Navigate tree based on feature value
+  IF x[node.feature] ≤ node.threshold THEN
+    RETURN TreePredict(node.left, x)
+  ELSE
+    RETURN TreePredict(node.right, x)
+  END IF
+END PROCEDURE
+```
+
+Tree traversal follows the learned split conditions.
+
+---
+
+## Gradient Calculation
+
+```
+PROCEDURE CalculateGradient(loss_function, y_true, y_pred):
+  CASE loss_function OF
+    "squared_error":
+      RETURN -(y_true - y_pred)
+    
+    "logistic":
+      prob ← 1 / (1 + exp(-y_pred))
+      RETURN -(y_true - prob)
+    
+    "softmax":
+      probs ← Softmax(y_pred)
+      RETURN -(y_true - probs)
+  END CASE
+END PROCEDURE
+```
+
+Different loss functions have different gradient formulas.
+
+---
+
+## Hessian Calculation
+
+```
+PROCEDURE CalculateHessian(loss_function, y_true, y_pred):
+  CASE loss_function OF
+    "squared_error":
+      RETURN 1
+    
+    "logistic":
+      prob ← 1 / (1 + exp(-y_pred))
+      RETURN prob × (1 - prob)
+    
+    "softmax":
+      probs ← Softmax(y_pred)
+      RETURN probs × (1 - probs)
+  END CASE
+END PROCEDURE
+```
+
+The Hessian captures the curvature of the loss function.
+
+---
+
+## Advanced Feature: Column Subsampling
+
+```
+PROCEDURE ColumnSubsample(features, colsample_rate):
+  n_features ← ⌊|features| × colsample_rate⌋
+  selected_features ← RandomSample(features, n_features)
+  RETURN selected_features
+END PROCEDURE
+```
+
+Column subsampling introduces randomness and prevents overfitting, similar to Random Forests.
+
+---
+
+## Advanced Feature: Missing Value Handling
+
+```
+PROCEDURE FindBestSplitWithMissing(D, g, h, feature):
+  // Try assigning missing values to left
+  gain_left, threshold_left ← 
+    CalculateSplitGain(D, g, h, feature, missing_to_left=TRUE)
+  
+  // Try assigning missing values to right
+  gain_right, threshold_right ← 
+    CalculateSplitGain(D, g, h, feature, missing_to_right=TRUE)
+  
+  // Choose direction that maximizes gain
+  IF gain_left > gain_right THEN
+    RETURN gain_left, threshold_left, direction="left"
+  ELSE
+    RETURN gain_right, threshold_right, direction="right"
+  END IF
+END PROCEDURE
+```
+
+XGBoost learns the optimal default direction for missing values.
+
+---
+
+## Advanced Feature: Tree Pruning
+
+```
+PROCEDURE PruneTree(node, γ):
+  IF node.is_leaf THEN
+    RETURN node
+  END IF
+  
+  // Recursively prune children
+  node.left ← PruneTree(node.left, γ)
+  node.right ← PruneTree(node.right, γ)
+  
+  // Calculate gain of this split
+  gain ← node.gain
+  
+  // If gain is less than γ, convert to leaf
+  IF gain < γ THEN
+    node.is_leaf ← TRUE
+    node.left ← NULL
+    node.right ← NULL
+  END IF
+  
+  RETURN node
+END PROCEDURE
+```
+
+Post-pruning removes splits that don't provide sufficient gain.
+
+---
+
+## R Example: Basic XGBoost
+
+```{r xgboost-basic, eval=FALSE}
+# Load data
+data(iris)
+X <- as.matrix(iris[, 1:4])
+y <- as.numeric(iris$Species) - 1
+
+# Create DMatrix (XGBoost's internal data structure)
+dtrain <- xgb.DMatrix(data = X, label = y)
+
+# Train XGBoost model
+model <- xgboost(
+  data = dtrain,
+  max_depth = 3,
+  eta = 0.3,           # learning rate
+  nrounds = 50,        # number of trees
+  objective = "multi:softprob",
+  num_class = 3,
+  verbose = 0
+)
+
+# Make predictions
+predictions <- predict(model, X)
+```
+
+---
+
+## R Example: With Cross-Validation
+
+```{r xgboost-cv, eval=FALSE}
+# Cross-validation to find optimal number of rounds
+cv_model <- xgb.cv(
+  data = dtrain,
+  max_depth = 3,
+  eta = 0.3,
+  nrounds = 100,
+  nfold = 5,
+  objective = "multi:softprob",
+  num_class = 3,
+  early_stopping_rounds = 10,
+  verbose = 0
+)
+
+# Get best iteration
+best_iter <- cv_model$best_iteration
+print(paste("Best iteration:", best_iter))
+
+# Train final model
+final_model <- xgboost(
+  data = dtrain,
+  max_depth = 3,
+  eta = 0.3,
+  nrounds = best_iter,
+  objective = "multi:softprob",
+  num_class = 3,
+  verbose = 0
+)
+```
+
+---
+
+## R Example: Feature Importance
+
+```{r xgboost-importance, eval=FALSE}
+# Get feature importance
+importance_matrix <- xgb.importance(
+  feature_names = colnames(X),
+  model = final_model
+)
+
+# Print importance
+print(importance_matrix)
+
+# Plot feature importance
+xgb.plot.importance(importance_matrix, top_n = 10)
+```
+
+Importance metrics include:
+
+- **Gain**: Average gain of splits using the feature
+- **Cover**: Average coverage of splits using the feature
+- **Frequency**: Number of times feature is used in splits
+
+---
+
+## R Example: Hyperparameter Tuning
+
+```{r xgboost-tuning, eval=FALSE}
+# Define parameter grid
+param_grid <- expand.grid(
+  max_depth = c(3, 5, 7),
+  eta = c(0.01, 0.1, 0.3),
+  subsample = c(0.7, 0.8, 1.0),
+  colsample_bytree = c(0.7, 0.8, 1.0),
+  lambda = c(0, 0.1, 1.0),  # L2 regularization
+  gamma = c(0, 0.1, 0.5)    # minimum split loss
+)
+
+# Train control
+train_control <- trainControl(
+  method = "cv",
+  number = 5,
+  verboseIter = FALSE
+)
+
+# Tune using caret
+tuned_model <- train(
+  x = X,
+  y = factor(y),
+  method = "xgbTree",
+  trControl = train_control,
+  tuneGrid = param_grid,
+  objective = "multi:softprob"
+)
+
+# Best parameters
+print(tuned_model$bestTune)
+```
+
+---
+
+## Complexity Analysis
+
+**Time Complexity:**
+
+- Training: $O(T \times n \times d \times m \times \log(n))$
+  - $T$ = number of trees
+  - $n$ = number of samples
+  - $d$ = tree depth
+  - $m$ = number of features
+
+- Prediction: $O(T \times d)$
+
+**Space Complexity:** $O(T \times d \times \text{max_leaves})$
+
+---
+
+## Advantages
+
+1. **Highly accurate** - State-of-the-art performance on structured data
+2. **Built-in regularization** - L1 and L2 penalties prevent overfitting
+3. **Handles missing values** - Automatically learns optimal direction
+4. **Feature importance** - Provides interpretability insights
+5. **Parallel processing** - Efficient tree construction
+6. **Pruning strategies** - Removes unnecessary splits
+7. **Cross-validation** - Built-in early stopping
+8. **Flexible** - Custom loss functions and evaluation metrics
+
+---
+
+## Disadvantages
+
+1. **Many hyperparameters** - Requires careful tuning
+2. **Sensitive to outliers** - Can overfit to extreme values
+3. **Overfitting risk** - With too many trees or high complexity
+4. **Less interpretable** - Compared to single decision trees
+5. **Memory intensive** - For large datasets
+6. **Sequential nature** - Cannot fully parallelize across trees
+7. **Requires careful preprocessing** - Feature scaling can impact performance
+
+---
+
+## Key Hyperparameters
+
+**Tree Parameters:**
+- `max_depth`: Maximum tree depth (3-10)
+- `min_child_weight`: Minimum sum of Hessian (1-10)
+- `gamma`: Minimum loss reduction for split (0-1)
+
+**Boosting Parameters:**
+- `learning_rate` (eta): Step size shrinkage (0.01-0.3)
+- `n_estimators`: Number of boosting rounds (50-1000)
+
+**Regularization:**
+- `lambda`: L2 regularization term (0-10)
+- `alpha`: L1 regularization term (0-10)
+
+**Sampling:**
+- `subsample`: Row sampling ratio (0.5-1.0)
+- `colsample_bytree`: Column sampling ratio (0.5-1.0)
+
+---
+
+## Practical Considerations
+
+**When to use XGBoost:**
+
+- Structured/tabular data
+- Need for high accuracy
+- Feature importance is important
+- Missing values in dataset
+- Computational resources available
+
+**When to avoid XGBoost:**
+
+- Very large datasets (consider LightGBM or CatBoost)
+- Real-time predictions with strict latency requirements
+- Image or text data (use deep learning)
+- High interpretability requirements
+
+---
+
+## XGBoost vs Other Algorithms
+
+**XGBoost vs Random Forest:**
+
+- XGBoost builds trees sequentially; RF builds in parallel
+- XGBoost uses gradient boosting; RF uses bagging
+- XGBoost typically more accurate but takes longer
+- RF less prone to overfitting
+
+**XGBoost vs Gradient Boosting:**
+
+- XGBoost uses second-order gradients; GB uses first-order
+- XGBoost has built-in regularization
+- XGBoost handles missing values natively
+- XGBoost more efficient with parallel processing
+
+---
+
+## Applications
+
+**Common use cases:**
+
+1. **Classification** - Binary and multi-class problems
+2. **Regression** - Continuous value prediction
+3. **Ranking** - Learning to rank (search engines)
+4. **Anomaly detection** - Fraud detection
+5. **Time series** - With proper feature engineering
+6. **Recommendation systems** - User preference modeling
+
+**Industry applications:**
+
+- Finance: Credit scoring, fraud detection
+- Healthcare: Disease prediction, patient risk assessment
+- E-commerce: Customer churn, product recommendations
+- Web: Click-through rate prediction, ad optimization
+
+---
+
+## System Architecture
+
+Chen & Guestrin (2016) designed XGBoost with several systems optimizations:
+
+1. **Column Block Structure** - Compressed column format for parallel learning
+2. **Cache-Aware Access** - Optimized memory access patterns
+3. **Block Compression** - Reduces memory footprint
+4. **Out-of-Core Computing** - Handles datasets larger than memory
+5. **Distributed Computing** - Scales to billions of examples
+
+These optimizations make XGBoost 10x faster than existing gradient boosting implementations.
+
+---
+
+## References
+
+Chen, T., & Guestrin, C. (2016). XGBoost: A Scalable Tree Boosting System. *Proceedings of the 22nd ACM SIGKDD International Conference on Knowledge Discovery and Data Mining*, 785-794.
+
+Friedman, J. H. (2001). Greedy function approximation: A gradient boosting machine. *Annals of Statistics*, 29(5), 1189-1232.
+
+Heineman, G.T., Pollice, G., & Selkow, S. (2009). *Algorithms in a Nutshell*. O'Reilly Media, Inc.
+
+XGBoost Documentation: https://xgboost.readthedocs.io/
+
+---
+
+## Summary
+
+XGBoost is a powerful gradient boosting algorithm that:
+
+- Uses second-order gradients for precise optimization
+- Includes built-in regularization to prevent overfitting
+- Handles missing values automatically
+- Provides parallel processing for efficiency
+- Offers extensive hyperparameter tuning options
+
+It remains one of the most successful algorithms for structured data, winning numerous machine learning competitions and powering production systems worldwide.
+
+**Key takeaway:** XGBoost combines statistical learning theory with systems engineering to create a highly efficient and accurate gradient boosting implementation.

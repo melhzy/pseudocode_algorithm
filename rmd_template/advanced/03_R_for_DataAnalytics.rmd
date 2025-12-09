@@ -1,0 +1,1060 @@
+---
+title: "Week 03: R for Data Analytics (Data Wrangling, EDA, and Basic Inference)"
+author: "Ziyuan Huang"
+date: "Last Updated: `r format(Sys.Date(), '%B %d, %Y')`"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    toc_depth: 3
+    theme: cosmo
+    highlight: tango
+    code_folding: show
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  warning = FALSE,
+  message = FALSE,
+  fig.align = 'center',
+  fig.width = 8,
+  fig.height = 5
+)
+
+# Reproducible seeds using seedhash (same pattern as Week 02)
+library(seedhash)
+gen <- SeedHashGenerator$new("Week03 Reproducible Seeds - ANLY500")
+seeds <- gen$generate_seeds(10)
+set.seed(seeds[1])
+
+cat("MD5 Hash:", gen$get_hash(), "\n")
+cat("Using seed:", seeds[1], "\n")
+```
+
+# Introduction
+
+## 1. Overview
+
+This Week 03 tutorial builds on Week 02 and focuses on practical data analytics workflows in R:
+
+- Tidy data principles and data import/export
+- Data wrangling with dplyr (filter, select, mutate, summarize, group_by)
+- Handling missing values and data cleaning
+- Joining datasets and reshaping (pivot_longer/pivot_wider)
+- Exploratory Data Analysis (EDA) with ggplot2
+- Basic statistical inference (t tests, proportion tests)
+
+> Reference: We will draw conceptual guidance from Field, Miles, & Field (2012), Discovering Statistics Using R.
+
+> Upgrade note: This hands-on tutorial extends the Week 03 lecture slides in `03_introDA_2.rmd` (frequency distributions, skew, kurtosis, central tendency, dispersion, z-scores, correlation) with code-first workflows and Field et al. (2012) aligned guidance.
+
+### For Beginners: Quick Start
+
+- How to run code:
+  - RStudio: place cursor in a chunk, press Ctrl+Enter (Cmd+Enter on Mac) to run; use Knit to render the full document.
+  - VS Code: highlight lines and press Ctrl+Enter, or click the Run button above a chunk.
+- Installing packages: if you see "there is no package called 'X'", run `install.packages("X")` once, then `library(X)`.
+- If stuck: restart R (RStudio: Session → Restart R), then re-run chunks from the top (setup first).
+- Reading errors: focus on the last lines of the message; they usually state the actual problem (e.g., object not found, package missing, misspelled column).
+
+## 2. Learning Objectives
+
+By the end of this tutorial, you will be able to:
+
+1. Import, tidy, and transform tabular data in R
+2. Compute grouped summaries and handle missing data appropriately
+3. Join multiple data tables safely and verify join results
+4. Build core EDA visualizations with ggplot2
+5. Conduct and report basic hypothesis tests consistent with Field et al. (2012)
+
+## 3. Required Packages
+
+```{r load-packages}
+# Install if needed
+# install.packages(c("tidyverse", "readr", "readxl", "janitor", "skimr", "ggplot2", "dplyr", "tidyr", "kableExtra"))
+
+library(tidyverse)   # readr, dplyr, tidyr, ggplot2
+library(readr)
+library(readxl)
+library(dplyr)
+library(tidyr)
+library(janitor)     # clean_names, tabyl
+library(skimr)       # quick EDA summaries
+library(ggplot2)
+library(knitr)
+library(kableExtra)
+## Optional packages for assumptions, effects, and reporting
+# install.packages(c("car", "effsize", "broom", "ggpubr"))
+if (requireNamespace("car", quietly = TRUE)) library(car)
+if (requireNamespace("effsize", quietly = TRUE)) library(effsize)
+if (requireNamespace("broom", quietly = TRUE)) library(broom)
+if (requireNamespace("ggpubr", quietly = TRUE)) library(ggpubr)
+
+cat("\n=== REPRODUCIBLE SEED INFORMATION ===")
+cat("\nGenerator Name: Week03 Reproducible Seeds - ANLY500")
+cat("\nMD5 Hash:", gen$get_hash())
+cat("\nAvailable Seeds:", paste(seeds[1:5], collapse = ", "), "...\n\n")
+```
+
+### 3.1 Optional: Auto-install helper for beginners
+
+If you prefer automatic installs, define this helper and use `ensure_pkg("packagename")` before `library(packagename)`.
+
+```{r optional-autoinstall, eval=FALSE}
+ensure_pkg <- function(pkg) {
+  if (!requireNamespace(pkg, quietly = TRUE)) {
+    install.packages(pkg)
+  }
+  suppressPackageStartupMessages(library(pkg, character.only = TRUE))
+}
+
+# Example usage:
+# ensure_pkg("tidyverse"); ensure_pkg("janitor")
+```
+
+---
+
+## 4. How to Use This File
+
+1. Read the narrative first to understand what each block does.
+2. Run code blocks one at a time; study the printed outputs.
+3. Modify small parts (e.g., change a column name) to see how results change.
+4. If an error appears, read it, fix the cause (often a typo or missing package), then re-run the same block.
+5. Knit at the end to produce an HTML tutorial you can review later.
+
+---
+
+# Part 1: Data Import, Tidy Data, and Cleaning (Field et al., 2012, ch. 3–4)
+
+## 1.1 Importing Data
+
+```{r import-data}
+# CSV
+# data <- read_csv("data/sales.csv")
+
+# Excel
+# data_xlsx <- read_excel("data/sales.xlsx", sheet = 1)
+
+# Example: create a small demo dataset
+sales <- tibble(
+  id = 1:10,
+  product = c("A","B","A","A","B","C","C","A","B","C"),
+  region = c("NE","NE","SE","MW","SE","MW","NE","SE","MW","NE"),
+  units = c(5, 7, 3, 6, 10, 2, 1, 8, 4, 6),
+  price = c(10, 10, 12, 9, 10, 11, 10, 12, 9, 11)
+)
+
+sales %>% head() %>% kable() %>% kable_styling(full_width = FALSE)
+```
+
+## 1.2 Tidy Columns and Names
+
+```{r clean-names}
+# Use janitor to get snake_case columns
+sales_tidy <- sales %>% clean_names()
+colnames(sales_tidy)
+```
+
+## 1.3 Handling Missing Values
+
+Field et al. (2012, ch. 4) emphasize that the *mechanism* of missingness determines valid handling strategies. The three classical mechanisms:
+
+- **MCAR (Missing Completely At Random)**: The probability a value is missing is unrelated to any observed or unobserved data. Missing cases form a random subset. Listwise deletion or simple summaries remain *unbiased* (though you lose power).
+- **MAR (Missing At Random)**: Missingness depends only on *observed* variables (e.g., income missing more often for younger participants). Proper modeling or multiple imputation that conditions on those observed predictors can yield approximately unbiased estimates.
+- **MNAR (Missing Not At Random)**: Missingness depends on the *unobserved* value itself (e.g., low satisfaction scores more likely to be missing). Standard methods (deletion, MAR-style imputation) can be biased; you need sensitivity analyses or explicit models of the missingness process.
+
+Quick decision guide (intro context):
+```
+If MCAR and % missing small (<5%): listwise delete is acceptable.
+If MAR: prefer multiple imputation (e.g., mice) or model-based methods.
+If MNAR suspected: document potential bias; consider collecting auxiliary data or performing sensitivity analysis.
+```
+
+Why mean imputation is discouraged (Field et al., 2012): it shrinks variance, distorts correlations, and can bias test statistics. Use it here only to *illustrate* differences in downstream summaries, not for real analyses.
+
+Below we artificially inject NA values and compare approaches. We also calculate missingness percentages to inform strategy selection.
+
+```{r missingness-summary}
+miss_pct <- sales_tidy %>% summarise(across(everything(), ~mean(is.na(.))*100))
+miss_pct
+```
+
+For rigorous projects later in the course, explore: `mice` (multiple imputation), `naniar` (visualizing missingness), and adding predictors of missingness to reduce MAR → MNAR risk.
+
+```{r missing-values}
+set.seed(seeds[2])
+sales_na <- sales_tidy %>%
+  mutate(units = ifelse(row_number() %% 4 == 0, NA, units))
+
+# Quick scan
+skimr::skim(sales_na)
+
+# Simple approach: remove rows with NA in units
+sales_complete <- sales_na %>% drop_na(units)
+
+# Alternative: mean impute (demonstration only — not recommended for inference)
+sales_mean_imp <- sales_na %>% mutate(units = ifelse(is.na(units), mean(units, na.rm = TRUE), units))
+```
+
+```{r compare-missing-impact}
+orig_mean <- mean(sales_tidy$units)
+complete_mean <- mean(sales_complete$units)
+imputed_mean <- mean(sales_mean_imp$units)
+
+data.frame(
+  scenario = c("Original", "Listwise Complete", "Mean Imputed"),
+  mean_units = c(orig_mean, complete_mean, imputed_mean)
+)
+
+```
+
+Notice how mean imputation pulls the mean toward the center when missing values are not MCAR.
+```
+
+---
+
+# Part 2: dplyr Verbs and Grouped Summaries (tidy pipelines)
+
+## 2.1 Filter, Select, Arrange
+
+These three verbs are the foundation of subsetting and organizing data frames in tidy workflows (Field et al., 2012, ch. 3–4 conceptual data screening). Conceptually: `filter()` keeps rows that satisfy logical predicates (row-wise reduction), `select()` narrows the set of columns (variable-wise focus), and `arrange()` reorders rows to surface patterns (e.g., largest revenues). Always confirm results with small previews (`head()`) to avoid silent mistakes.
+
+```{r dplyr-basics}
+sales_NE <- sales_complete %>% filter(region == "NE")
+sales_small <- sales_complete %>% select(id, product, units)
+sales_sorted <- sales_complete %>% arrange(desc(units))
+
+list(NE = sales_NE, small = sales_small, sorted = sales_sorted)
+```
+
+## 2.2 Mutate and Case-When
+
+Use `mutate()` to engineer new features or transform existing variables in-place, a key step before summaries or modeling (Field et al., 2012, ch. 3 feature creation). `case_when()` enables vectorized conditional recoding without iterative loops, producing clean categorical buckets. Thoughtful feature engineering often improves interpretability and downstream test power.
+
+```{r mutate-casewhen}
+sales_feat <- sales_complete %>%
+  mutate(
+    revenue = units * price,
+    bucket = case_when(
+      units >= 8 ~ "High",
+      units >= 4 ~ "Medium",
+      TRUE       ~ "Low"
+    )
+  )
+
+table(sales_feat$bucket)
+```
+
+## 2.3 Grouped Summaries
+
+`group_by()` establishes a grouping structure so that `summarise()` calculates statistics per group rather than globally. This mirrors the descriptive phase emphasized by Field et al. (2012, ch. 3–4) prior to formal tests—understanding subgroup counts, central tendency, and dispersion helps anticipate assumption issues (e.g., unequal variances) and guides hypothesis formulation.
+
+```{r grouped-summarise}
+summary_tbl <- sales_feat %>%
+  group_by(region, product) %>%
+  summarise(
+    n = n(),
+    avg_units = mean(units),
+    total_rev = sum(revenue),
+    .groups = "drop"
+  )
+
+summary_tbl %>%
+  arrange(desc(total_rev)) %>%
+  kable(caption = "Grouped Summary by Region and Product") %>%
+  kable_styling(full_width = FALSE)
+```
+
+---
+
+# Part 3: Joining and Reshaping Data (wide ↔ long)
+
+## 3.1 Joins
+
+Joins merge relational tables by matching key columns. A `left_join()` preserves all rows of the left (primary) table, appending columns from the right when keys match; unmatched keys yield NA for new columns. Conversely, `anti_join()` returns rows in the left table with no match—useful for data integrity checks (e.g., products missing metadata). Thoughtful joining prevents inadvertent row duplication that can bias summaries (Field et al., 2012, ch. 3 data preparation principles).
+
+```{r joins}
+products <- tibble(
+  product = c("A","B","C","D"),
+  category = c("Hardware","Hardware","Software","Hardware")
+)
+
+joined <- sales_feat %>% left_join(products, by = "product")
+
+anti <- sales_feat %>% anti_join(products, by = "product") # rows with product not in products
+list(joined_head = head(joined), not_matched = anti)
+```
+
+## 3.2 Reshaping
+
+Reshaping converts data between "wide" (many measurement columns) and "long" (one column of values plus identifiers). Long format simplifies grouped operations and plotting (single value column with factor indicating measure), while wide format can be convenient for certain modeling interfaces or human inspection. Field et al. (2012, ch. 3–4) stress tidy representations to reduce manual errors—ensure each row is a single observational unit after reshaping.
+
+```{r reshaping}
+# Wide -> Long
+wide <- tibble(id = 1:3, q1 = c(3,4,5), q2 = c(2,4,5))
+long <- wide %>% pivot_longer(cols = starts_with("q"), names_to = "question", values_to = "score")
+
+# Long -> Wide
+restored <- long %>% pivot_wider(names_from = question, values_from = score)
+
+list(long = long, restored = restored)
+```
+
+---
+
+# Part 4: Exploratory Data Analysis (EDA)
+
+## 4.1 Univariate Distributions
+
+**What is a univariate distribution?** "Univariate" means looking at *one* variable at a time (uni = one). Before you compare groups or test relationships, you need to understand each variable individually. Think of it as getting to know each person before understanding how they interact.
+
+**Why does this matter?** Looking at a single variable's distribution tells you:
+- **Shape**: Is it bell-curved (normal), lopsided (skewed), or flat?
+- **Center**: Where do most values cluster? (mean, median)
+- **Spread**: Are values tightly packed or widely scattered? (standard deviation, range)
+- **Outliers**: Are there extreme or unusual values?
+
+**How to read a histogram**: Each bar shows how many observations fall in that range. A tall bar = many cases with that value; a short bar = few cases. The overall shape matters—symmetric distributions allow different statistical tools than skewed ones.
+
+**Density curve (the red line)**: This smooth curve estimates the underlying probability distribution. It helps you see whether data is unimodal (one peak), bimodal (two peaks), or something else. Field et al. (2012, ch. 2–3) emphasize that recognizing severe skew or heavy tails early guides whether you should use means vs. medians, or consider data transformations.
+
+**Beginner tip**: Always plot your data first! Numbers alone (mean = 5.2) don't tell you if you have outliers or weird patterns.
+
+```{r hist-density}
+ggplot(sales_feat, aes(units)) +
+  geom_histogram(bins = 6, fill = "steelblue", color = "white", alpha = 0.8) +
+  geom_density(color = "red", linewidth = 1) +
+  labs(title = "Distribution of Units", x = "Units", y = "Count") +
+  theme_minimal()
+```
+
+## 4.2 Bivariate Relationships
+
+**What is a bivariate relationship?** "Bivariate" means examining *two* variables together (bi = two) to see if they're related. For example: Does price affect revenue? Do taller people weigh more?
+
+**Why scatter plots?** Each point represents one observation (one row of data). The x-axis shows one variable, the y-axis shows another. Patterns in the cloud of points reveal relationships:
+- **Positive slope**: As X increases, Y tends to increase (upward trend)
+- **Negative slope**: As X increases, Y tends to decrease (downward trend)  
+- **No pattern**: X and Y aren't linearly related (random scatter)
+
+**The fitted line**: This is a "best-fit" straight line through the points (using linear regression). If points cluster tightly around it, the relationship is strong and linear. If points are widely scattered, the relationship is weak or nonlinear.
+
+**What is heteroscedasticity?** (Also called "unequal spread") This fancy term means the scatter/variability changes across the range. Example: Low prices might have consistent revenue (tight cluster), but high prices show wild variability (wide scatter). This matters because some statistical tests assume constant variability.
+
+**Color by group**: Adding color (e.g., different regions) reveals whether the relationship differs by group—maybe price predicts revenue well in the Northeast but not in the Southeast. Field et al. (2012, ch. 6) calls this an *interaction effect*: the relationship depends on which group you're in.
+
+**Beginner tip**: Always plot before calculating correlation! A curved relationship or outliers can fool correlation numbers.
+
+```{r scatter}
+ggplot(sales_feat, aes(price, revenue, color = region)) +
+  geom_point(size = 3, alpha = 0.8) +
+  geom_smooth(method = "lm", se = FALSE, color = "black") +
+  labs(title = "Price vs. Revenue by Region") +
+  theme_minimal()
+```
+
+## 4.3 Categorical Comparisons
+
+**What are categorical comparisons?** Here you're comparing a *numeric* outcome (e.g., revenue, test scores) across *categories* (e.g., product types, regions, treatment groups). Question format: "Do products A, B, and C generate different average revenues?"
+
+**Why bar charts with error bars?** 
+- **Bar height**: Shows the average (mean) for each group  
+- **Error bars**: Show variability/uncertainty. Short bars = consistent data; long bars = high variability
+- **Overlap**: If error bars overlap a lot, group means might not be truly different—differences could be due to random chance
+
+**What is standard error (SE)?** SE measures how much your sample mean would bounce around if you collected multiple samples. Smaller SE = more confident your sample mean is close to the true population mean. It shrinks with larger sample sizes.
+
+**Preliminary hypotheses**: This visual exploration (Field et al., 2012, ch. 3, 9) helps you form educated guesses before formal testing: "It looks like Product A earns more than B—let's test if that's statistically significant."
+
+**Important caveat**: Visual overlap is a *hint*, not proof. You need formal tests (like t-tests or ANOVA) to account for sample size and variability properly. Two groups might look different visually but not reach statistical significance, or vice versa.
+
+**Beginner tip**: If bars are very different heights AND error bars don't overlap, you likely have a real difference. If bars are similar or error bars overlap heavily, differences might be noise.
+
+```{r bar}
+ggplot(sales_feat, aes(product, revenue, fill = region)) +
+  stat_summary(fun = mean, geom = "col", position = position_dodge()) +
+  stat_summary(fun.data = mean_se, geom = "errorbar", position = position_dodge(.9), width = .2) +
+  labs(title = "Average Revenue by Product and Region") +
+  theme_minimal()
+```
+
+## 4.4 Distribution Shape: Skewness and Kurtosis (Field et al., 2012, ch. 2–3)
+
+**Why do shape metrics matter?** Many statistical tests (t-tests, ANOVA, regression) assume data follow a roughly "normal" (bell-shaped) distribution. If your data is severely skewed or has extreme outliers ("heavy tails"), those tests may give misleading results. Field et al. (2012) recommend checking shape *before* running formal tests—if assumptions are violated, use robust methods or transformations.
+
+### What is Skewness?
+
+**Plain English**: Skewness measures *asymmetry*—whether your distribution leans to one side.
+
+- **Zero skewness**: Symmetric (bell curve)—mean and median are about equal
+- **Positive skew (right skew)**: Long tail on the right side. Most values cluster low, but a few extreme high values pull the mean upward. Think: income (most people earn moderate amounts, a few billionaires), house prices. The mean > median.
+- **Negative skew (left skew)**: Long tail on the left side. Most values cluster high, a few extreme low values pull the mean down. Think: exam scores where most students do well but a few fail badly. The mean < median.
+
+**Rule of thumb** (Field et al., 2012):
+- |skewness| < 0.5: approximately symmetric (safe for most tests)
+- |skewness| 0.5–1.0: moderate skew (check robustness)
+- |skewness| > 1.0: highly skewed (consider medians/IQR, transformations, or nonparametric tests)
+
+### What is Kurtosis?
+
+**Plain English**: Kurtosis measures *tail heaviness*—how much probability sits in the extreme tails vs. the center/shoulders of the distribution.
+
+- **Normal kurtosis (mesokurtic)**: Like a standard bell curve (raw kurtosis ≈ 3; excess kurtosis = 0)  
+- **High kurtosis (leptokurtic, "peaked")**: Heavy tails and a sharp peak. More extreme outliers than normal. Excess kurtosis > 0. Think: financial returns (most days normal, occasional crashes/booms).  
+- **Low kurtosis (platykurtic, "flat")**: Light tails and a flat top. Fewer extreme values than normal. Excess kurtosis < 0. Think: uniform distribution (dice roll).
+
+**Why it matters**: High kurtosis means outliers are more common—this inflates variance and can distort means. Tests assuming normality may be unreliable.
+
+**Excess kurtosis**: Most software reports "excess" = raw kurtosis − 3, so normal distribution has excess = 0. Easier to interpret: positive = heavy tails, negative = light tails.
+
+**Beginner takeaway**: If skewness or kurtosis is large, your data isn't bell-shaped. Use medians instead of means, or try log/sqrt transformations to reduce skew before testing.
+
+```{r shape-moments, message=FALSE, warning=FALSE}
+if (!requireNamespace("moments", quietly = TRUE)) {
+  # install.packages("moments")
+}
+if (!requireNamespace("psych", quietly = TRUE)) {
+  # install.packages("psych")
+}
+
+library(moments)
+library(psych)
+
+units_vec <- sales_feat$units
+
+data.frame(
+  mean = mean(units_vec),
+  median = median(units_vec),
+  skewness = moments::skewness(units_vec),
+  kurtosis = moments::kurtosis(units_vec)
+)
+
+psych::describe(units_vec)
+```
+
+Interpretation cues (Field et al., 2012):
+- |skew| > 1 ≈ highly skewed; 0.5–1 ≈ moderate; < 0.5 ≈ approximately symmetric.
+- Excess kurtosis (kurtosis − 3): > 0 leptokurtic (heavy tails); < 0 platykurtic (light tails).
+
+## 4.5 Standardization (z-scores) (Field et al., 2012, ch. 2)
+
+**What is a z-score?** A z-score (also called a "standard score") tells you how many *standard deviations* a value is away from the mean. It's a way to standardize different measurements onto the same scale.
+
+**The formula**: z = (value − mean) / SD
+
+**Real-world analogy**: Imagine comparing student performance on two exams:
+- Math test: mean = 70, SD = 10; you scored 85  
+- English test: mean = 80, SD = 5; you scored 90
+
+Which score is better *relative to classmates*? Raw scores (85 vs 90) don't tell you—they're on different scales.
+
+Convert to z-scores:
+- Math: z = (85 − 70) / 10 = **1.5** (1.5 SDs above average)  
+- English: z = (90 − 80) / 5 = **2.0** (2 SDs above average)
+
+You performed *better* in English relative to peers, even though the raw score gap was smaller!
+
+**Why standardize?**  
+1. **Compare apples to oranges**: Variables measured in different units (dollars, kilograms, test scores) become comparable  
+2. **Spot outliers**: Values with |z| > 3 are extremely rare (>99.7% of data falls within ±3 SD in a normal distribution). A z-score of 4 is highly unusual—possible outlier or data error.  
+3. **Prepare for modeling**: Many machine learning algorithms perform better when features are standardized
+
+**Key properties after standardization**:
+- Mean of z-scores = 0  
+- SD of z-scores = 1  
+- Shape unchanged (skewed data stays skewed)
+
+**Limitations (Field et al., 2012)**: Z-scores assume the mean and SD are meaningful summaries. If your data is heavily skewed or has extreme outliers, the mean/SD are distorted—z-scores won't help much. Consider robust alternatives like median absolute deviation or transformations first.
+
+```{r zscores}
+sales_feat <- sales_feat %>% mutate(units_z = as.numeric(scale(units)))
+summary(sales_feat$units_z)
+```
+
+**Interpreting z-scores**:
+- z = 0: exactly at the mean  
+- z = 1: one SD above the mean (better than ~84% of observations in normal data)  
+- z = −1: one SD below the mean  
+- z > 3 or z < −3: extreme value—potential outlier (Field et al., 2012)
+
+**Beginner tip**: After standardizing, check the summary—mean should be very close to 0, SD should be 1. If not, something went wrong!
+
+## 4.6 Correlation and Association (Field et al., 2012, ch. 6)
+
+**What is correlation?** Correlation measures the *strength* and *direction* of the linear relationship between two numeric variables. It answers: "When X goes up, does Y tend to go up (positive), go down (negative), or stay random (no correlation)?"
+
+**The correlation coefficient (r)**: A number between −1 and +1:
+- **r = +1**: Perfect positive relationship (all points on an upward line)  
+- **r = +0.7**: Strong positive (as X increases, Y tends to increase)  
+- **r = 0**: No linear relationship (cloud of random points)  
+- **r = −0.7**: Strong negative (as X increases, Y tends to decrease)  
+- **r = −1**: Perfect negative relationship (all points on a downward line)
+
+**Rough interpretation guide**:
+- |r| < 0.3: weak correlation  
+- |r| 0.3–0.7: moderate correlation  
+- |r| > 0.7: strong correlation  
+(Context matters! In social sciences, r = 0.5 is often considered strong; in physics, you might expect r > 0.9.)
+
+### Pearson Correlation (r)
+
+**What it is**: The standard correlation. It measures *linear* association assuming both variables are approximately normally distributed (Field et al., 2012, ch. 6).
+
+**When to use it**:
+- Both variables are continuous (not categorical)  
+- Relationship is linear (scatter plot shows straight-line pattern)  
+- No severe outliers  
+- Roughly normal distributions (bell-shaped)
+
+**How it works**: Pearson r uses the actual *values* of X and Y. It's sensitive to outliers—one extreme point can inflate or deflate r dramatically.
+
+**Example**: Height and weight usually have r ≈ 0.7–0.8 (strong positive)—taller people tend to weigh more.
+
+### Spearman's Rho (ρ)
+
+**What it is**: A *rank-based* correlation. Instead of using raw values, it ranks the data (1st smallest, 2nd smallest, etc.) and correlates the ranks.
+
+**When to use it** (Field et al., 2012):
+- Data is ordinal (rankings, Likert scales: "strongly disagree" to "strongly agree")  
+- Non-normal distributions or outliers present  
+- Relationship is *monotonic* but not necessarily linear (e.g., curved but consistently increasing)
+
+**Advantage**: Robust to outliers and skew. One extreme value won't distort the rank much.
+
+**Example**: Education level (high school, bachelor's, master's, PhD) vs. income. The relationship may not be perfectly linear (PhD income varies widely), but it's monotonic (higher education → higher income on average). Spearman handles this better than Pearson.
+
+### Critical Reminder: Visualize First!
+
+**Correlation ≠ Causation**: r = 0.9 doesn't mean X *causes* Y. Both could be driven by a third variable (ice cream sales and drownings both increase in summer—doesn't mean ice cream causes drowning).
+
+**Nonlinear patterns**: Pearson r can be near zero even with a strong *curved* relationship (e.g., U-shaped or exponential). Always plot your data! A scatter plot reveals patterns numbers can't (Field et al., 2012, ch. 6).
+
+**Beginner tip**: If your scatter plot looks like a random blob, correlation won't be useful—there's no systematic relationship to quantify.
+
+```{r correlation, message=FALSE, warning=FALSE}
+num_df <- sales_feat %>% select(units, price, revenue)
+cor(num_df, use = "pairwise.complete.obs", method = "pearson")
+
+cor.test(num_df$price, num_df$revenue, method = "pearson")
+
+# Nonparametric alternative (rank-based)
+cor.test(num_df$price, num_df$revenue, method = "spearman")
+```
+
+Reporting template (APA-style cues): r(8) = .52, p = .12, 95% CI [.10, .78] (Field et al., 2012).
+
+---
+
+## 4.7 Assumptions and Diagnostics (Field et al., 2012)
+
+**Why check assumptions?** Statistical tests like t-tests and ANOVA are based on mathematical models that assume your data has certain properties. If these assumptions are badly violated, your p-values and conclusions can be wrong—you might claim a "significant" difference that's actually just noise, or miss a real difference.
+
+**Good news**: Most tests are "robust" to minor violations—small departures from perfect normality usually don't matter much. The goal is to catch *severe* violations.
+
+### 4.7.1 Three Key Assumptions for t-tests (Field et al., 2012, ch. 9)
+
+#### 4.7.1.1 Independence
+**What it means**: Each observation is unrelated to others—no hidden pairing or clustering.
+
+**Examples of violations**:
+- Measuring the same person multiple times (repeated measures—use paired t-test or mixed models instead)  
+- Students nested in classrooms (scores within a class may be correlated—use multilevel models)  
+- Time series data (today's temperature affects tomorrow's)
+
+**How to check**: This comes from your *study design*, not the data. Ask: "Could one observation influence another?"
+
+**Fix if violated**: Use appropriate models (paired tests, repeated measures ANOVA, mixed models).
+
+#### 4.7.1.2 Normality
+**What it means**: Within each group, the data follows an approximately bell-shaped (normal/Gaussian) distribution.
+
+**Why it matters**: t-tests use the mean and assume sampling distributions are normal. With severe skew or outliers, the mean is misleading and the test loses power or gives wrong error rates.
+
+**How to check**:
+- **Visual**: Histogram (should look bell-shaped), Q–Q plot (points should follow the diagonal line)  
+- **Formal test**: Shapiro-Wilk test (p > 0.05 = normal; p < 0.05 = non-normal)  
+  *Caveat*: With large samples, Shapiro-Wilk rejects normality for trivial deviations—trust plots more than p-values.
+
+**What to do if violated**:
+- Small deviations are OK (t-tests are robust with n > 30)  
+- Severe skew: use median/nonparametric tests (Wilcoxon, Mann-Whitney), or transform data (log, square-root)  
+- Outliers: investigate (data error? real extreme case?) and consider robust methods
+
+**Q–Q Plot explained**: "Quantile-Quantile" plot compares your data's quantiles to a theoretical normal distribution. If points hug the diagonal line, data is normal. Curves or S-shapes = non-normality. Points peeling off at ends = heavy/light tails.
+
+#### 4.7.1.3 Homogeneity of Variance (Equal Variances)
+**What it means**: The spread (variance, SD) is similar across groups you're comparing.
+
+**Example**: You're comparing test scores: Group A has scores 60–70 (tight cluster, SD = 3); Group B has scores 40–90 (wide spread, SD = 15). Variances are unequal—this violates the assumption for the classic *Student's t-test*.
+
+**Why it matters**: Unequal variances distort the t-test's error rates, especially with unequal group sizes.
+
+**How to check**:
+- **Visual**: Side-by-side boxplots or histograms—if one group's box is much taller/wider, variances may differ  
+- **Formal test**: Levene's test (p > 0.05 = equal variances; p < 0.05 = unequal)
+
+**Fix if violated**: Use **Welch's t-test** (the R default `t.test()`)—it doesn't assume equal variances and adjusts degrees of freedom. This is safer and recommended by Field et al. (2012, ch. 9).
+
+### 4.7.2 Diagnostic Workflow (Beginner-Friendly)
+
+1. **Plot histograms** for each group → Check for severe skew, bimodality, outliers  
+2. **Q–Q plots** → Check linearity (points on diagonal = normal)  
+3. **Shapiro-Wilk test** → Confirm normality (but trust plots more with large n)  
+4. **Levene's test** → Check variance equality  
+5. If assumptions look OK → proceed with standard t-test  
+6. If assumptions violated → use Welch t-test (unequal variances) or nonparametric tests (non-normality)
+
+**Beginner tip**: Don't obsess over perfect normality. Field et al. (2012) emphasize that t-tests work well even with moderate violations, especially if sample sizes are balanced and n > 30. Focus on catching *severe* problems (extreme skew, huge outliers, vastly unequal variances).
+
+```{r diagnostics, message=FALSE, warning=FALSE}
+# Example groups: compare revenue across three regions to inspect distributions
+ggplot(sales_feat, aes(x = revenue)) +
+  geom_histogram(bins = 8, fill = "gray70", color = "white") +
+  facet_wrap(~ region, ncol = 3) +
+  theme_minimal() +
+  labs(title = "Revenue Histograms by Region")
+
+# Q–Q plots (requires ggpubr) — only for groups with n >= 3
+if (requireNamespace("ggpubr", quietly = TRUE)) {
+  df_q <- dplyr::group_by(sales_feat, region) |> dplyr::filter(dplyr::n() >= 3)
+  if (nrow(df_q) > 0) ggpubr::ggqqplot(df_q, x = "revenue", facet.by = "region")
+}
+
+# Shapiro–Wilk per group (guard for n < 3; for large n, it over-rejects)
+region_counts <- table(sales_feat$region)
+region_counts
+
+shapiro_by_region <- lapply(split(sales_feat$revenue, sales_feat$region), function(x) {
+  x <- x[!is.na(x)]
+  if (length(x) >= 3) {
+    tryCatch(stats::shapiro.test(x), error = function(e) list(error = e$message))
+  } else {
+    list(note = "n < 3; Shapiro-Wilk requires at least 3 observations")
+  }
+})
+shapiro_by_region
+
+# Levene's test for homogeneity (car)
+if (requireNamespace("car", quietly = TRUE)) {
+  car::leveneTest(revenue ~ region, data = sales_feat)
+}
+```
+
+Guidance (Field et al., 2012):
+- Normality: minor deviations are acceptable; focus on strong skew/outliers.
+- Homogeneity: if variances differ, use Welch’s t test (default in `t.test`).
+- Independence: comes from design; ensure grouping is not repeated measures.
+
+---
+
+# Part 5: Basic Inference (Field et al., 2012, ch. 9)
+
+## 5.1 One-Sample t Test
+
+**What is a one-sample t-test?** It tests whether your sample's average differs from a specific value you care about (a benchmark, target, or theoretical expectation).
+
+**Real-world examples**:
+- A factory claims light bulbs last 1000 hours on average. You test 50 bulbs: is the true mean really 1000, or different?  
+- A school targets 75% pass rate. This year's sample shows 78%—is that a real improvement or just random variation?  
+- You expect healthy adults to have resting heart rate = 70 bpm. Your sample's mean is 68—significantly different?
+
+**When to use it**: You have *one sample* and want to compare its mean to a *known/hypothesized value*.
+
+#### 5.1.2 The Logic (Field et al., 2012, ch. 9)
+
+**Hypotheses**:  
+- **H₀ (null hypothesis)**: The population mean equals the target value (μ = μ₀). Any difference in your sample is just random chance.  
+- **H₁ (alternative hypothesis)**: The population mean differs from the target (μ ≠ μ₀). The difference is real, not chance.
+
+**In our example**:
+- H₀: Mean units = 5 (no difference from target)  
+- H₁: Mean units ≠ 5 (sample is systematically higher or lower)
+
+**How the test works**:  
+1. Calculate how far your sample mean is from the target (μ₀)  
+2. Account for sample size and variability (smaller samples and high variability = less certainty)  
+3. Convert this to a *t-statistic*: t = (sample mean − μ₀) / (SE of mean)  
+4. Compare t to a reference distribution (t-distribution) to get a *p-value*
+
+**p-value interpretation**:
+- p < 0.05: "Statistically significant"—the difference is unlikely due to chance alone (reject H₀)  
+- p ≥ 0.05: Not enough evidence to claim a real difference (fail to reject H₀)  
+(The 0.05 cutoff is a convention; context matters—medical studies often use 0.01.)
+
+**Confidence Interval (CI)**: The 95% CI tells you the plausible range for the true population mean. If the target value (5) falls *outside* this interval, the test is significant at p < 0.05.
+
+**Assumptions** (Field et al., 2012):
+- **Normality**: Data approximately bell-shaped (or n > 30, where Central Limit Theorem helps)  
+- **Independence**: Observations unrelated  
+If normality is badly violated (severe skew, small sample), use the **Wilcoxon signed-rank test** (nonparametric alternative).
+
+> Field et al. (2012, ch. 9) recommend verifying assumptions (normality, independence) before t tests.
+
+- H0: The mean units equals 5 (no difference from target).
+- H1: The mean units differs from 5.
+
+```{r one-sample-ttest}
+set.seed(seeds[3])
+units_vec <- sales_feat$units
+
+# Check: Shapiro-Wilk for small sample (illustrative)
+shapiro.test(units_vec)
+
+# t test
+one_t <- t.test(units_vec, mu = 5)
+one_t
+```
+
+#### 5.1.3 Effect Size for One-Sample (Cohen's d)
+
+**What is effect size?** Statistical significance (p-value) tells you *whether* an effect exists (is it real or just chance?). Effect size tells you *how big* that effect is—its practical importance.
+
+**Why does this matter?** With huge samples, even tiny, meaningless differences become "statistically significant" (p < 0.05). Conversely, with tiny samples, large important differences might not reach significance. Effect size provides context.
+
+**Real-world analogy**: Imagine two scenarios:
+1. A drug lowers blood pressure by 0.5 mmHg on average, p = 0.001 (highly significant with 10,000 patients)  
+2. A drug lowers blood pressure by 15 mmHg on average, p = 0.08 (not significant with only 20 patients)
+
+Which drug is more important clinically? #2! Despite lacking statistical significance (small sample), the effect is huge. Effect size captures this.
+
+##### 5.1.3.1 Cohen's d Formula
+
+d = (sample mean − target value) / SD
+
+**Interpretation**: Cohen's d expresses the difference in *standard deviation units*—similar logic to z-scores.
+
+**Cohen's Benchmarks** (rough guidelines, Field et al., 2012, ch. 9):
+- **d = 0.2**: Small effect (subtle, hard to notice)  
+- **d = 0.5**: Medium effect (noticeable to careful observer)  
+- **d = 0.8**: Large effect (obvious, practically important)
+
+**Important caveat**: These benchmarks are *general rules*. Context matters! In education, d = 0.4 might be considered large (hard to move learning outcomes). In physics, d = 1.5 might be small (equipment precision).
+
+**Example**: If light bulbs last 1050 hours (target 1000) with SD = 100:  
+d = (1050 − 1000) / 100 = 0.5 (medium effect—half a standard deviation longer)
+
+If SD = 500:  
+d = (1050 − 1000) / 500 = 0.1 (tiny effect—barely longer than expected variability)
+
+Same 50-hour difference, but different practical meaning depending on variability!
+
+**Why report both p-value and effect size?** (Field et al., 2012)  
+- p-value: Is the effect real or chance?  
+- Effect size: Is the effect big enough to care about?
+
+**Beginner tip**: A statistically significant result (p < 0.05) with tiny effect size (d = 0.1) might not be worth acting on. Look for results that are both significant *and* have meaningful effect sizes.
+
+```{r d-one-sample, message=FALSE}
+mu0 <- 5
+sd_units <- sd(units_vec)
+d_one <- (mean(units_vec) - mu0) / sd_units
+d_one
+```
+
+Interpretation (rough guide): 0.2 small, 0.5 medium, 0.8 large (but always consider your domain!).
+
+## 5.2 Independent Samples t Test (Welch)
+
+**What is an independent samples t-test?** It compares the *means* of two *separate* (independent) groups to see if they differ significantly.
+
+**Real-world examples**:
+- Do men and women have different average salaries?  
+- Is blood pressure lower in the treatment group vs. control group?  
+- Do students taught with Method A score higher than those taught with Method B?
+
+**Key word: "Independent"** — The two groups contain *different* people/units. (If the same people are measured twice—before/after—you need a *paired* t-test instead.)
+
+#### 5.2.2 The Logic (Field et al., 2012, ch. 9)
+
+**Hypotheses**:  
+- **H₀**: Group means are equal (μ₁ = μ₂). Any difference is random sampling variation.  
+- **H₁**: Group means differ (μ₁ ≠ μ₂). There's a real systematic difference.
+
+**In our example**:
+- H₀: Mean revenue in Northeast = Mean revenue in Southeast  
+- H₁: Mean revenue Northeast ≠ Southeast
+
+**How the test works**:  
+1. Calculate the difference between group means  
+2. Estimate how much means would bounce around due to random chance (standard error of the difference)  
+3. t-statistic = (difference in means) / (standard error)  
+4. Look up t in a reference distribution to get p-value
+
+**p-value interpretation**:  
+- p < 0.05: "Significant difference"—groups genuinely differ  
+- p ≥ 0.05: No significant difference—observed gap could be chance
+
+**Confidence Interval**: The 95% CI for the *difference* in means tells you the plausible range. If CI includes zero, groups aren't significantly different.
+
+#### 5.2.3 Student's t-test vs. Welch's t-test
+
+**Student's t-test** (classic version):  
+- Assumes equal variances (spread) in both groups  
+- If this assumption is violated, results are unreliable (especially with unequal sample sizes)
+
+**Welch's t-test** (R default):  
+- Does *not* assume equal variances  
+- Adjusts degrees of freedom to account for different spreads  
+- More robust and safer—Field et al. (2012, ch. 9) recommend it as the default
+
+**Practical advice**: Always use Welch's t-test (which R does by default in `t.test()`) unless you have strong theoretical reasons to assume equal variances. It's safer and performs well even when variances *are* equal.
+
+**Assumptions**:
+1. **Independence**: Observations in Group 1 are unrelated to Group 2  
+2. **Normality**: Data in each group approximately bell-shaped (or n > 30 per group)  
+3. **Equal variances**: Only for Student's t; Welch relaxes this
+
+If normality is badly violated (severe skew, outliers) in small samples, use **Mann-Whitney U / Wilcoxon rank-sum test** (nonparametric alternative).
+
+**Beginner tip**: Inspect boxplots or histograms for each group first—look for similar shapes and spreads. Large differences in spread suggest Welch is the right choice (which it already is by default!).
+
+- H0: Mean revenue is equal across two regions (e.g., NE vs. SE).
+- H1: Mean revenue differs between the two regions.
+
+```{r two-sample-ttest}
+sub2 <- sales_feat %>% filter(region %in% c("NE","SE"))
+t.test(revenue ~ region, data = sub2) # Welch by default
+```
+
+#### 5.2.4 Effect Size for Independent Samples (Cohen's d)
+
+**What is Cohen's d for two groups?** It measures how far apart the two group means are, expressed in *standard deviation units*. This standardization makes effect sizes comparable across different studies and measures.
+
+**Formula**:  
+d = (Mean₁ − Mean₂) / pooled SD
+
+The "pooled SD" is a weighted average of the two groups' standard deviations—it represents typical within-group variability.
+
+**Intuition**: Cohen's d answers: "How many standard deviations apart are these groups?"
+
+**Example**: Compare test scores:
+- Group A: mean = 75, SD = 10  
+- Group B: mean = 85, SD = 10  
+- Difference = 10 points  
+- d = 10 / 10 = 1.0 (large effect—groups are one full SD apart)
+
+Now compare salaries:
+- Group A: mean = $50,000, SD = $20,000  
+- Group B: mean = $55,000, SD = $20,000  
+- Difference = $5,000  
+- d = 5,000 / 20,000 = 0.25 (small effect—only a quarter SD apart)
+
+The $5,000 salary difference sounds big in absolute terms, but relative to variability it's modest.
+
+**Cohen's Benchmarks** (Field et al., 2012, ch. 9):  
+- **d ≈ 0.2**: Small effect (subtle difference)  
+- **d ≈ 0.5**: Medium effect (noticeable to trained observer)  
+- **d ≈ 0.8**: Large effect (obvious, substantial difference)
+
+**Critical context** (Field et al., 2012): These are *rough guidelines*. What counts as "large" depends on your field:
+- **Education**: d = 0.4 is often considered large (hard to improve learning outcomes)  
+- **Psychology**: d = 0.5–0.8 is typical for interventions  
+- **Medicine**: d = 0.2 might be clinically important if it's a life-threatening condition  
+- **Physics**: d = 1.5 might be small (high precision expected)
+
+Always interpret effect sizes in the context of your domain, prior research, and practical importance. A statistically significant result with d = 0.1 might not be worth implementing; a non-significant result with d = 0.7 (due to small sample) might warrant further investigation.
+
+**Hedges' g**: A refined version of Cohen's d with a small-sample correction, reported by some packages (like `effsize`). Differences are trivial unless n < 20 per group.
+
+**Beginner tip**: When reporting results, always include both:
+1. Statistical significance (p-value)—is the effect real?  
+2. Effect size (Cohen's d)—is the effect important?
+
+A significant p-value with tiny d suggests the effect is real but trivial. Large d with non-significant p suggests promising but underpowered (need larger sample).
+
+```{r d-indep, message=FALSE}
+if (requireNamespace("effsize", quietly = TRUE)) {
+  effsize::cohen.d(revenue ~ region, data = sub2, hedges.correction = TRUE)
+}
+```
+
+## 5.3 Proportion Test (One-Sample)
+
+Tests whether an observed proportion (success rate) aligns with a hypothesized benchmark. When sample sizes are small or expected counts low, exact binomial tests may be preferable to large-sample approximations; conceptually parallels mean tests but for binary outcomes (Field et al., 2012, ch. 9 categorical comparison logic).
+
+- H0: The proportion of high bucket (>=8 units) equals 0.3.
+- H1: The proportion differs from 0.3.
+
+```{r prop-test}
+high_n <- sum(sales_feat$bucket == "High")
+N <- nrow(sales_feat)
+prop.test(high_n, N, p = 0.3)
+```
+
+### 5.4 Reporting (APA-style cues)
+
+> Report test statistic, df, p-value, and effect size where possible (Field et al., 2012). Example: "The mean units did not differ from 5, t(8) = 0.87, p = .41, 95% CI [4.1, 6.2]."
+
+### 5.5 Auto-generate a brief APA-style summary (optional)
+
+Automating reporting reduces manual transcription errors (incorrect df, p). The template enforces inclusion of central elements (test statistic, df, p, CI). Always verify direction and context to avoid ambiguous statements (Field et al., 2012, ch. 9 recommendations).
+
+```{r apa-builder, message=FALSE}
+if (requireNamespace("broom", quietly = TRUE)) {
+  tt <- t.test(units_vec, mu = 5)
+  tb <- broom::tidy(tt)
+  sprintf(
+    "The mean units %s differ from 5, t(%0.0f) = %0.2f, p = %0.3f, 95%% CI [%0.2f, %0.2f].",
+    ifelse(tb$p.value < 0.05, "significantly", "did not"),
+    tb$parameter, tb$statistic, tb$p.value, tb$conf.low, tb$conf.high
+  )
+}
+```
+
+---
+
+# Part 6: Application, Pitfalls, and Practice
+
+## 6.1 Common Pitfalls and Tips (Field et al., 2012)
+
+These recurring issues often degrade validity or interpretability. Systematically scanning for them before formal testing (pre-flight checklist) lowers the chance of post-hoc rationalizations and improves reproducibility of your analysis narrative.
+
+- Using means for highly skewed variables: prefer medians/IQR or transform.
+- Running many tests without adjusting error rates: control familywise error or focus on planned comparisons.
+- Treating ordinal scales as interval without caution: report medians or use nonparametrics when appropriate.
+- Over-reliance on p-values: include effect sizes and confidence intervals.
+- Violated assumptions: switch to robust methods (Welch t; Wilcoxon rank-sum as a nonparametric alternative).
+
+```{r wilcoxon, message=FALSE}
+# Nonparametric alternative to independent t test
+wilcox.test(revenue ~ region, data = sub2, exact = FALSE)
+```
+
+---
+
+## 6.2 Practice Exercises
+
+Exercises reinforce workflow fluency: importing, wrangling, exploring, testing, and interpreting. Prioritize clear rationale for each decision (choice of summary, test selection) to build habits consistent with transparent statistical reporting (Field et al., 2012).
+
+1. Import a CSV of your choice (or create one) and:
+   - Clean column names with `janitor::clean_names()`
+   - Create new features with `mutate()`
+   - Produce grouped summaries with `group_by()` and `summarise()`
+2. Create a plot that compares a numeric outcome across groups with mean and error bars.
+3. Run an independent samples t test for a meaningful comparison in your data. State H0 and H1 explicitly.
+4. Briefly interpret your EDA plots and test results in plain language.
+
+5. Compute and interpret an effect size for one of your tests (Cohen’s d for t tests). Explain what “small/medium/large” means in your context.
+6. If assumptions are not met, rerun the analysis with an appropriate robust or nonparametric alternative and compare conclusions.
+
+---
+
+# Part 7: Support & Reference
+
+This section consolidates learner support materials: common error fixes, a quick glossary of R/data analytics terms, and reference mapping to Field et al. (2012).
+
+## 7.1 Common Errors and How to Fix Them (Beginner FAQ)
+
+- "there is no package called 'X'": run `install.packages("X")`, then `library(X)`.
+- "could not find function 'foo'": you forgot to load the package (`library(pkg)`) or misspelled the function.
+- "object 'sales' not found": run the earlier chunk that creates `sales` (the import or demo data block) or check spelling.
+- "cannot open file 'data/...'": the file path is wrong. Use an absolute path or `here::here()` and ensure the file exists.
+- "non-numeric argument to binary operator": a column is character/factor; convert with `as.numeric()` or fix the data type earlier.
+- Knit fails but chunks run: restart R, run setup chunk, then Knit; ensure all packages are installed.
+
+---
+
+## 7.2 Glossary: Core Terms and Statistical Concepts
+
+Below are concise explanations of each statistical term or function used in this tutorial, paraphrased and aligned with guidance from Field, Miles, & Field (2012). Citations indicate the relevant chapter (ch.).
+
+### 7.2.1 Data Structures & Wrangling
+- **tibble**: A modern, cleaner version of a data frame that prints a preview and preserves column types clearly (tidyverse convention).
+- **`filter()`**: Returns rows matching logical conditions (subset operation).
+- **`select()`**: Chooses columns by name or helper functions; does not modify data content.
+- **`mutate()`**: Adds or transforms columns by applying calculations row-wise.
+- **`summarise()`**: Reduces many rows to summary statistics (e.g., mean, count); usually used with `group_by()`.
+- **`group_by()`**: Defines grouping structure so subsequent summarise or mutate operations act per group.
+- **`pivot_longer()` / `pivot_wider()`**: Reshape data between long format (one row per measurement) and wide format (one row per entity, multiple measurement columns).
+- **factor**: Categorical variable storing discrete levels; ordered factors encode meaningful ordering (Field et al., 2012, ch. 2).
+- **NA**: R’s representation of a missing value; propagates through many calculations.
+- **`set.seed()`**: Fixes the random number generator state to ensure reproducible simulation or sampling.
+
+### 7.2.2 Distributions & Descriptive Statistics
+- **Frequency distribution**: Tabulation or visualization showing how often each value occurs; reveals shape (Field et al., 2012, ch. 2).
+- **Histogram**: Bar plot of binned continuous values; approximates the underlying distribution.
+- **Skewness**: Numerical measure of asymmetry. Positive skew has a right tail; negative skew has a left tail. Large |skew| (>1) indicates substantial asymmetry (Field et al., 2012, ch. 2–3).
+- **Kurtosis**: Tail heaviness relative to a normal distribution. Leptokurtic (>3 raw kurtosis) = heavy tails; platykurtic (<3) = light tails. Often use excess kurtosis (kurtosis − 3) (Field et al., 2012, ch. 2–3).
+- **Mean**: Arithmetic average; sensitive to outliers; optimal under symmetric distributions (Field et al., 2012, ch. 2).
+- **Median**: Middle ordered value; robust to outliers/skew and preferred for skewed or ordinal data (Field et al., 2012, ch. 2).
+- **Mode**: Most frequent value; useful for nominal data (Field et al., 2012, ch. 2).
+- **Range**: Difference between max and min; highly influenced by extremes (Field et al., 2012, ch. 3).
+- **Quartiles & Interquartile Range (IQR)**: Quartiles split ordered data into four equal parts; IQR = Q3 − Q1; robust spread measure (Field et al., 2012, ch. 3).
+- **Variance**: Average squared deviation from the mean; in sample form divides by (n − 1); describes spread (Field et al., 2012, ch. 3).
+- **Standard deviation (SD)**: Square root of variance; expresses average distance from mean in original units (Field et al., 2012, ch. 3).
+- **z-score (standard score)**: Number of SDs a value lies from the mean; enables comparison across differently scaled variables; |z| > 3 may flag potential outliers (Field et al., 2012, ch. 2).
+
+### 7.2.3 Association & Correlation
+- **Covariance**: Average product of paired deviations (X − mean(X))*(Y − mean(Y)); scale-dependent measure of linear co-movement (Field et al., 2012, ch. 6).
+- **Correlation (Pearson r)**: Standardized covariance bounded in [-1, 1]; measures strength and direction of linear association assuming interval-level data and approximate normality (Field et al., 2012, ch. 6).
+- **Spearman’s rho**: Rank-based correlation robust to non-normality and monotonic (not strictly linear) relationships (Field et al., 2012, ch. 6).
+- **Effect size (Cohen’s d)**: Standardized mean difference; (Mean₁ − Mean₂)/pooled SD (or single-sample difference over SD). Rough benchmarks: 0.2 small, 0.5 medium, 0.8 large (Field et al., 2012, ch. 9).
+
+### 7.2.4 Missing Data Mechanisms
+- **MCAR (Missing Completely At Random)**: Missingness independent of observed and unobserved data; deletion yields unbiased estimates (Field et al., 2012, ch. 4).
+- **MAR (Missing At Random)**: Missingness related only to observed variables; multiple imputation or modeling conditional on observed covariates can reduce bias (Field et al., 2012, ch. 4).
+- **MNAR (Missing Not At Random)**: Missingness depends on unobserved values; requires sensitivity analyses or explicit missingness models (Field et al., 2012, ch. 4).
+- **Listwise deletion**: Removes rows with any missing values; simple but loses power; acceptable mainly under MCAR (Field et al., 2012, ch. 4).
+- **Multiple imputation**: Generates several plausible values for missing observations from predictive models, combining results to reflect uncertainty (Field et al., 2012, ch. 4).
+
+### 7.2.5 Inference & Hypothesis Testing
+- **Assumptions (t tests)**: Independence of observations, approximate normality of each group, and for Student’s t test, equal variances (homogeneity). Welch’s t adjusts for unequal variances (Field et al., 2012, ch. 9).
+- **One-sample t test**: Tests if sample mean differs from a hypothesized value (Field et al., 2012, ch. 9).
+- **Independent samples t test (Welch)**: Compares means of two groups; Welch version does not assume equal variances (Field et al., 2012, ch. 9).
+- **Welch t test**: Variant of independent t test with adjusted degrees of freedom for heteroscedasticity (Field et al., 2012, ch. 9).
+- **Wilcoxon rank-sum test**: Nonparametric alternative when assumptions of independent t test (especially normality) are violated or for ordinal data (Field et al., 2012, ch. 9).
+- **Proportion test (one-sample)**: Compares observed proportion to a hypothesized population proportion using a binomial/normal approximation (Field et al., 2012, ch. 9 context for categorical comparisons).
+- **Normality**: Distribution shape approximates a Gaussian; checked via visual tools (histogram, Q–Q plot) plus tests (Shapiro–Wilk) but practical judgment preferred (Field et al., 2012, ch. 3–4).
+- **Homogeneity of variance**: Similar group variances; violations suggest Welch t or robust methods (Field et al., 2012, ch. 9).
+- **Independence**: Observations not systematically related (no pairing or clustering) — a design property (Field et al., 2012, ch. 9).
+
+### 7.2.6 Diagnostic Tests & Tools
+- **Shapiro–Wilk test**: Formal test of normality; sensitive with large samples; interpret alongside plots (Field et al., 2012, ch. 3–4).
+- **Levene’s test**: Tests equality of variances across groups; significant result suggests variance heterogeneity (Field et al., 2012, ch. 9).
+- **Q–Q plot**: Graph comparing quantiles of sample data to theoretical normal quantiles; deviations in tails or curvature indicate non-normality (Field et al., 2012, ch. 3–4).
+
+### 7.2.7 Robust / Alternative Methods
+- **Welch adjustment**: Uses separate variance estimates per group, modifying degrees of freedom to improve Type I error control under heterogeneity (Field et al., 2012, ch. 9).
+- **Nonparametric rank tests**: Rely on ordering rather than raw values, reducing influence of outliers and non-normality (Field et al., 2012, ch. 9).
+
+### 7.2.8 Reporting & Interpretation
+- **APA-style reporting**: Present test statistic, degrees of freedom, p-value, confidence intervals, and effect size (Field et al., 2012, ch. 9 guidance alignment).
+- **Confidence interval (CI)**: Range of plausible population parameter values; width reflects precision (Field et al., 2012, ch. 9).
+
+Tip: Print intermediate results (`head(df)`, `str(df)`, `summary(df)`) to validate workflow at each stage; this reduces debugging time.
+
+> Source reference for definitions unless otherwise noted: Field, A., Miles, J., & Field, Z. (2012). *Discovering Statistics Using R*. Chapters indicated above.
+
+---
+
+## 7.3 References
+
+- Field, A., Miles, J., & Field, Z. (2012). Discovering Statistics Using R. SAGE Publications.
+  - ch. 2: Measurement, distributions, z-scores
+  - ch. 3–4: Exploring data, data screening, missing data
+  - ch. 6: Correlation and assumptions
+  - ch. 9: Comparing two means (t tests)
+
+Local reference notes: `ANLY500-Analytics-I/Knowledge/Field_ea_2012_Discovering_Statistics_using_R_normalized.txt` (or absolute path `D:\Github\data_sciences\ANLY500-Analytics-I\Knowledge\Field_ea_2012_Discovering_Statistics_using_R_normalized.txt`).
+
+---
+
+# Glossary (Condensed Quick Reference)
+
+Quick one-line reminders for fast scanning (see Part 7.2 for extended definitions):
+
+- Skewness: Direction/degree of asymmetry.
+- Kurtosis: Tail heaviness vs. normal.
+- Mean / Median / Mode: Central tendency (sensitive / robust / categorical).
+- SD / IQR: Spread (overall vs. robust middle 50%).
+- z-score: Distance from mean in SD units.
+- Pearson r / Spearman rho: Linear vs. rank-based association strength.
+- MCAR / MAR / MNAR: Missingness mechanisms informing handling strategy.
+- Cohen’s d: Standardized mean difference effect size.
+- Shapiro–Wilk / Levene’s: Normality and variance homogeneity diagnostics.
+- Welch t / Wilcoxon: Robust parametric vs. nonparametric mean difference tests.
+- Confidence Interval: Plausible parameter range estimating uncertainty.
+
+End of Week 03 tutorial.

@@ -1,0 +1,505 @@
+---
+title: "Random Forest Algorithm - Pseudocode"
+author: "Pseudocode Algorithm Collection"
+date: "Last Updated: `r format(Sys.Date(), '%B %d, %Y')`"
+output: 
+  slidy_presentation:
+    incremental: true
+    df_print: paged
+---
+
+## Reference Material
+
+This pseudocode implementation references concepts from:
+
+- **Breiman, L. (2001).** "Random Forests." *Machine Learning*, 45(1), 5-32. 
+  - Original paper available at: `D:\Github\pseudocode_algorithm\papers\randomforest2001.pdf`
+- Heineman, G.T., Pollice, G., & Selkow, S. (2009). "Algorithms in a Nutshell" O'Reilly Media, Inc.
+
+**Note:** This pseudocode is an original educational implementation based on Leo Breiman's seminal 2001 paper introducing Random Forests and general algorithmic principles from computer science literature.
+
+## Random Forest Algorithm - Overview
+
+**Random Forest** (Breiman, 2001) is an ensemble learning method that constructs multiple decision trees during training and outputs:
+
+- **Classification:** Mode (majority vote) of individual tree predictions
+- **Regression:** Mean of individual tree predictions
+
+The algorithm was introduced by Leo Breiman in his landmark 2001 paper published in *Machine Learning* journal, revolutionizing ensemble methods in machine learning.
+
+## Key Concepts
+
+Random Forest relies on three fundamental concepts from Breiman (2001):
+
+1. **Bootstrap Aggregating (Bagging)** - Introduced by Breiman (1996), each tree trains on a bootstrap sample drawn with replacement
+2. **Random Feature Selection** - At each node split, only a random subset of features is considered, introducing diversity
+3. **Ensemble Voting** - Final prediction aggregates all tree predictions through majority vote (classification) or averaging (regression)
+
+These innovations reduce variance without increasing bias, creating a powerful ensemble method.
+
+## Algorithm: Random Forest Training
+
+**INPUT:**
+
+- `D`: training dataset with n samples, m features
+- `T`: number of trees to build
+- `k`: number of features to consider at each split
+- `max_depth`: maximum depth of each tree
+- `min_samples`: minimum samples required to split
+
+**OUTPUT:**
+
+- `Forest`: collection of T trained decision trees
+
+## Pseudocode: Random Forest Training
+
+```
+PROCEDURE RandomForestTrain(D, T, k, max_depth, min_samples):
+  Forest ← empty list
+  
+  FOR i = 1 TO T DO
+    // Bootstrap sampling: sample n instances with replacement
+    D_bootstrap ← BootstrapSample(D, n)
+    
+    // Build decision tree with random feature selection
+    tree ← BuildDecisionTree(D_bootstrap, k, max_depth, min_samples)
+    
+    // Add tree to forest
+    Forest.append(tree)
+  END FOR
+  
+  RETURN Forest
+END PROCEDURE
+```
+
+## Algorithm: Build Decision Tree
+
+The decision tree building process is recursive:
+
+```
+PROCEDURE BuildDecisionTree(D, k, max_depth, min_samples):
+  RETURN BuildNode(D, 0, k, max_depth, min_samples)
+END PROCEDURE
+```
+
+## Pseudocode: BuildNode (Part 1)
+
+```
+PROCEDURE BuildNode(D, depth, k, max_depth, min_samples):
+  // Create a new node
+  node ← new TreeNode()
+  
+  // Base cases - create leaf node
+  IF depth ≥ max_depth OR |D| < min_samples OR AllSameLabel(D) THEN
+    node.is_leaf ← TRUE
+    node.prediction ← MajorityClass(D)  // for classification
+    RETURN node
+  END IF
+  
+  // Randomly select k features from m total features
+  features_subset ← RandomlySelectKFeatures(D, k)
+  
+  // Find best split among the k features
+  best_feature, best_threshold ← FindBestSplit(D, features_subset)
+```
+
+## Pseudocode: BuildNode (Part 2)
+
+```
+  // If no good split found, make leaf
+  IF best_feature = NULL THEN
+    node.is_leaf ← TRUE
+    node.prediction ← MajorityClass(D)
+    RETURN node
+  END IF
+  
+  // Set node split criteria
+  node.is_leaf ← FALSE
+  node.feature ← best_feature
+  node.threshold ← best_threshold
+  
+  // Split data
+  D_left ← {samples in D where feature ≤ threshold}
+  D_right ← {samples in D where feature > threshold}
+  
+  // Recursively build child nodes
+  node.left ← BuildNode(D_left, depth + 1, k, max_depth, min_samples)
+  node.right ← BuildNode(D_right, depth + 1, k, max_depth, min_samples)
+  
+  RETURN node
+END PROCEDURE
+```
+
+## Algorithm: Random Forest Prediction
+
+```
+PROCEDURE RandomForestPredict(Forest, x):
+  predictions ← empty list
+  
+  // Get prediction from each tree
+  FOR EACH tree IN Forest DO
+    prediction ← PredictTree(tree.root, x)
+    predictions.append(prediction)
+  END FOR
+  
+  // For classification: return majority vote
+  final_prediction ← MajorityVote(predictions)
+  
+  // For regression: return mean
+  // final_prediction ← Mean(predictions)
+  
+  RETURN final_prediction
+END PROCEDURE
+```
+
+## Pseudocode: Tree Prediction
+
+```
+PROCEDURE PredictTree(node, x):
+  IF node.is_leaf THEN
+    RETURN node.prediction
+  END IF
+  
+  // Navigate tree based on feature value
+  IF x[node.feature] ≤ node.threshold THEN
+    RETURN PredictTree(node.left, x)
+  ELSE
+    RETURN PredictTree(node.right, x)
+  END IF
+END PROCEDURE
+```
+
+## Helper Procedure: Bootstrap Sampling
+
+Bootstrap sampling creates a training set by sampling with replacement:
+
+```
+PROCEDURE BootstrapSample(D, n):
+  D_bootstrap ← empty dataset
+  FOR i = 1 TO n DO
+    // Sample with replacement
+    random_index ← RandomInt(0, n-1)
+    D_bootstrap.append(D[random_index])
+  END FOR
+  RETURN D_bootstrap
+END PROCEDURE
+```
+
+## Helper Procedure: Random Feature Selection
+
+```
+PROCEDURE RandomlySelectKFeatures(D, k):
+  all_features ← GetAllFeatures(D)
+  m ← |all_features|
+  selected_features ← RandomSample(all_features, min(k, m))
+  RETURN selected_features
+END PROCEDURE
+```
+
+## Helper Procedure: Find Best Split (Part 1)
+
+```
+PROCEDURE FindBestSplit(D, features_subset):
+  best_gain ← -∞
+  best_feature ← NULL
+  best_threshold ← NULL
+  
+  FOR EACH feature IN features_subset DO
+    // Try different threshold values
+    thresholds ← GetUniqueValues(D, feature)
+    
+    FOR EACH threshold IN thresholds DO
+      D_left ← {samples where feature ≤ threshold}
+      D_right ← {samples where feature > threshold}
+      
+      // Calculate information gain (or Gini impurity reduction)
+      gain ← CalculateInformationGain(D, D_left, D_right)
+```
+
+## Helper Procedure: Find Best Split (Part 2)
+
+```
+      IF gain > best_gain THEN
+        best_gain ← gain
+        best_feature ← feature
+        best_threshold ← threshold
+      END IF
+    END FOR
+  END FOR
+  
+  RETURN best_feature, best_threshold
+END PROCEDURE
+```
+
+## Helper Procedure: Calculate Information Gain
+
+```
+PROCEDURE CalculateInformationGain(D, D_left, D_right):
+  n ← |D|
+  n_left ← |D_left|
+  n_right ← |D_right|
+  
+  // Calculate Gini impurity
+  gini_parent ← GiniImpurity(D)
+  gini_children ← (n_left/n) × GiniImpurity(D_left) + 
+                   (n_right/n) × GiniImpurity(D_right)
+  
+  gain ← gini_parent - gini_children
+  RETURN gain
+END PROCEDURE
+```
+
+## Helper Procedure: Gini Impurity
+
+```
+PROCEDURE GiniImpurity(D):
+  class_counts ← CountClasses(D)
+  n ← |D|
+  gini ← 1.0
+  
+  FOR EACH class_count IN class_counts DO
+    probability ← class_count / n
+    gini ← gini - probability²
+  END FOR
+  
+  RETURN gini
+END PROCEDURE
+```
+
+## Helper Procedure: Majority Vote
+
+```
+PROCEDURE MajorityVote(predictions):
+  class_counts ← CountOccurrences(predictions)
+  majority_class ← ClassWithMaxCount(class_counts)
+  RETURN majority_class
+END PROCEDURE
+```
+
+## Complexity Analysis: Time Complexity
+
+**Training Complexity:**
+
+$$O(T \times n \times \log(n) \times k \times d)$$
+
+Where:
+
+- $T$ = number of trees
+- $n$ = number of samples
+- $k$ = features considered per split
+- $d$ = tree depth
+
+**Prediction Complexity:**
+
+$$O(T \times d)$$
+
+Where:
+
+- $T$ = number of trees
+- $d$ = average tree depth
+
+## Complexity Analysis: Space Complexity
+
+**Space Complexity:** $O(T \times d)$
+
+Where:
+
+- $T$ = number of trees
+- $d$ = average tree depth
+
+## Advantages of Random Forest
+
+Random Forest offers several key advantages:
+
+- ✓ **Reduces overfitting** through averaging multiple trees
+- ✓ **Handles high-dimensional data** well
+- ✓ **Robust to outliers and noise** in the data
+- ✓ **Provides feature importance** estimates
+- ✓ **Can handle both** classification and regression tasks
+- ✓ **Requires little hyperparameter** tuning
+- ✓ **Parallelizable** training process
+
+## Disadvantages of Random Forest
+
+Some limitations to consider:
+
+- ✗ **Less interpretable** than a single decision tree
+- ✗ **Computationally expensive** for large datasets
+- ✗ **Memory intensive** with many trees
+- ✗ **Slower prediction** compared to single tree
+- ✗ **Biased towards** features with more categories
+- ✗ **Not suitable** for linear relationships
+
+## Example in R: Loading Data
+
+```{r message=FALSE, warning=FALSE}
+# Load required libraries
+library(randomForest)
+library(caret)
+
+# Load iris dataset
+data(iris)
+str(iris)
+```
+
+## Example in R: Training Random Forest
+
+```{r message=FALSE, warning=FALSE}
+# Set seed for reproducibility
+set.seed(123)
+
+# Split data
+trainIndex <- createDataPartition(iris$Species, p = 0.7, list = FALSE)
+trainData <- iris[trainIndex, ]
+testData <- iris[-trainIndex, ]
+
+# Train Random Forest
+rf_model <- randomForest(
+  Species ~ ., 
+  data = trainData,
+  ntree = 100,        # Number of trees
+  mtry = 2,           # Features to consider at each split
+  importance = TRUE
+)
+
+print(rf_model)
+```
+
+## Example in R: Model Performance
+
+```{r message=FALSE, warning=FALSE}
+# Make predictions
+predictions <- predict(rf_model, testData)
+
+# Confusion Matrix
+confusionMatrix(predictions, testData$Species)
+```
+
+## Example in R: Feature Importance
+
+```{r fig.height=4, fig.width=8, message=FALSE, warning=FALSE}
+# Plot variable importance
+varImpPlot(rf_model, main = "Random Forest - Feature Importance")
+```
+
+## Example in R: Visualize Trees
+
+```{r fig.height=5, fig.width=10, message=FALSE, warning=FALSE}
+# Plot error vs number of trees
+plot(rf_model, main = "Error Rate vs Number of Trees")
+legend("topright", colnames(rf_model$err.rate), 
+       col = 1:4, cex = 0.8, fill = 1:4)
+```
+
+## Practical Considerations: Hyperparameters
+
+Key hyperparameters to tune:
+
+- **ntree (T):** Number of trees in the forest (typically 100-500)
+- **mtry (k):** Number of features to consider at each split
+  - Classification: $\sqrt{m}$ (default)
+  - Regression: $m/3$ (default)
+- **max_depth:** Maximum depth of trees
+- **min_samples_split:** Minimum samples to split a node
+- **min_samples_leaf:** Minimum samples in leaf nodes
+- **max_features:** Maximum features to consider
+
+## Practical Considerations: Out-of-Bag (OOB) Error
+
+Random Forest has a built-in validation mechanism:
+
+- Each tree is trained on ~63.2% of the data (bootstrap sample)
+- Remaining ~36.8% is "out-of-bag" (OOB)
+- OOB samples can be used for validation
+- Provides unbiased estimate of test error
+- No need for separate validation set
+
+## Practical Considerations: When to Use
+
+**Best suited for:**
+
+- Complex, non-linear relationships
+- High-dimensional datasets
+- Mixed feature types (categorical + continuous)
+- Robustness is more important than interpretability
+- Feature importance analysis needed
+
+**Not ideal for:**
+
+- Simple linear relationships
+- Real-time predictions (latency-sensitive)
+- Memory-constrained environments
+- Highly interpretable models required
+
+## Applications of Random Forest
+
+Random Forest is widely used in:
+
+1. **Classification:** Image classification, spam detection, disease diagnosis
+2. **Regression:** Price prediction, demand forecasting
+3. **Feature Selection:** Identifying important variables
+4. **Outlier Detection:** Using proximity measures
+5. **Missing Value Imputation:** Using iterative methods
+6. **Imbalanced Datasets:** With class weights
+
+## Variations and Extensions
+
+Several variants exist:
+
+- **Extra Trees (Extremely Randomized Trees):** More randomization in split selection
+- **Isolation Forest:** For anomaly detection
+- **Quantile Regression Forests:** For prediction intervals
+- **Conditional Random Forests:** For conditional inference
+- **Balanced Random Forest:** For imbalanced data
+- **Weighted Random Forest:** With sample weights
+
+## Comparison with Other Algorithms
+
+| Algorithm | Interpretability | Speed | Accuracy | Overfitting Risk |
+|-----------|------------------|-------|----------|------------------|
+| Single Tree | High | Fast | Low-Medium | High |
+| Random Forest | Low | Moderate | High | Low |
+| Gradient Boosting | Low | Slow | Very High | Medium |
+| Neural Network | Very Low | Slow | Very High | Medium-High |
+
+## Summary
+
+In this presentation, we covered:
+
+- Random Forest algorithm overview and key concepts
+- Complete pseudocode implementation
+- Training and prediction procedures
+- Helper functions (bootstrap, feature selection, splitting)
+- Complexity analysis (time and space)
+- Advantages and disadvantages
+- Practical R implementation example
+- Hyperparameter tuning considerations
+- Applications and variations
+
+## References
+
+1. Breiman, L. (2001). "Random Forests." Machine Learning, 45(1), 5-32.
+2. Heineman, G.T., Pollice, G., & Selkow, S. (2009). "Algorithms in a Nutshell." O'Reilly Media, Inc.
+3. Hastie, T., Tibshirani, R., & Friedman, J. (2009). "The Elements of Statistical Learning." Springer.
+4. James, G., Witten, D., Hastie, T., & Tibshirani, R. (2013). "An Introduction to Statistical Learning." Springer.
+5. Liaw, A., & Wiener, M. (2002). "Classification and Regression by randomForest." R News, 2(3), 18-22.
+
+## Further Resources
+
+**Online Resources:**
+
+- Random Forest Documentation: https://www.rdocumentation.org/packages/randomForest
+- Scikit-learn User Guide: https://scikit-learn.org/stable/modules/ensemble.html
+- Kaggle Random Forest Tutorial: https://www.kaggle.com/learn/random-forests
+
+**Books:**
+
+- "Random Forests" by Leo Breiman (original paper)
+- "Machine Learning with R" by Brett Lantz
+- "Hands-On Machine Learning with Scikit-Learn and TensorFlow" by Aurélien Géron
+
+## Questions?
+
+Thank you for your attention!
+
+For questions or discussions about this pseudocode implementation, please refer to the original text file or the referenced materials.

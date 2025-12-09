@@ -1,0 +1,253 @@
+===============================================
+RANDOM FOREST ALGORITHM - PSEUDOCODE
+===============================================
+
+Reference Material:
+------------------
+This pseudocode implementation references concepts from:
+- Heineman, G.T., Pollice, G., & Selkow, S. (2009). "Algorithms in a Nutshell" 
+  O'Reilly Media, Inc.
+  
+Note: The pseudocode presented here is an original implementation
+created for educational purposes, inspired by general algorithmic
+principles discussed in the referenced work and standard machine
+learning literature.
+
+Overview:
+---------
+Random Forest is an ensemble learning method that constructs multiple
+decision trees during training and outputs the mode (classification)
+or mean (regression) of individual trees' predictions.
+
+Key Concepts:
+- Bootstrap aggregating (bagging) for training data sampling
+- Random feature selection at each split
+- Ensemble voting for final prediction
+
+===============================================
+ALGORITHM: Random Forest Training
+===============================================
+
+INPUT:
+  D: training dataset with n samples, m features
+  T: number of trees to build
+  k: number of features to consider at each split
+  max_depth: maximum depth of each tree
+  min_samples: minimum samples required to split
+
+OUTPUT:
+  Forest: collection of T trained decision trees
+
+PROCEDURE RandomForestTrain(D, T, k, max_depth, min_samples):
+  Forest ← empty list
+  
+  FOR i = 1 TO T DO
+    // Bootstrap sampling: sample n instances with replacement
+    D_bootstrap ← BootstrapSample(D, n)
+    
+    // Build decision tree with random feature selection
+    tree ← BuildDecisionTree(D_bootstrap, k, max_depth, min_samples)
+    
+    // Add tree to forest
+    Forest.append(tree)
+  END FOR
+  
+  RETURN Forest
+END PROCEDURE
+
+
+===============================================
+ALGORITHM: Build Decision Tree (for Random Forest)
+===============================================
+
+PROCEDURE BuildDecisionTree(D, k, max_depth, min_samples):
+  RETURN BuildNode(D, 0, k, max_depth, min_samples)
+END PROCEDURE
+
+PROCEDURE BuildNode(D, depth, k, max_depth, min_samples):
+  // Create a new node
+  node ← new TreeNode()
+  
+  // Base cases - create leaf node
+  IF depth ≥ max_depth OR |D| < min_samples OR AllSameLabel(D) THEN
+    node.is_leaf ← TRUE
+    node.prediction ← MajorityClass(D)  // for classification
+    RETURN node
+  END IF
+  
+  // Randomly select k features from m total features
+  features_subset ← RandomlySelectKFeatures(D, k)
+  
+  // Find best split among the k features
+  best_feature, best_threshold ← FindBestSplit(D, features_subset)
+  
+  // If no good split found, make leaf
+  IF best_feature = NULL THEN
+    node.is_leaf ← TRUE
+    node.prediction ← MajorityClass(D)
+    RETURN node
+  END IF
+  
+  // Set node split criteria
+  node.is_leaf ← FALSE
+  node.feature ← best_feature
+  node.threshold ← best_threshold
+  
+  // Split data
+  D_left ← {samples in D where feature ≤ threshold}
+  D_right ← {samples in D where feature > threshold}
+  
+  // Recursively build child nodes
+  node.left ← BuildNode(D_left, depth + 1, k, max_depth, min_samples)
+  node.right ← BuildNode(D_right, depth + 1, k, max_depth, min_samples)
+  
+  RETURN node
+END PROCEDURE
+
+
+===============================================
+ALGORITHM: Random Forest Prediction
+===============================================
+
+PROCEDURE RandomForestPredict(Forest, x):
+  predictions ← empty list
+  
+  // Get prediction from each tree
+  FOR EACH tree IN Forest DO
+    prediction ← PredictTree(tree.root, x)
+    predictions.append(prediction)
+  END FOR
+  
+  // For classification: return majority vote
+  final_prediction ← MajorityVote(predictions)
+  
+  // For regression: return mean
+  // final_prediction ← Mean(predictions)
+  
+  RETURN final_prediction
+END PROCEDURE
+
+PROCEDURE PredictTree(node, x):
+  IF node.is_leaf THEN
+    RETURN node.prediction
+  END IF
+  
+  // Navigate tree based on feature value
+  IF x[node.feature] ≤ node.threshold THEN
+    RETURN PredictTree(node.left, x)
+  ELSE
+    RETURN PredictTree(node.right, x)
+  END IF
+END PROCEDURE
+
+
+===============================================
+HELPER PROCEDURES
+===============================================
+
+PROCEDURE BootstrapSample(D, n):
+  D_bootstrap ← empty dataset
+  FOR i = 1 TO n DO
+    // Sample with replacement
+    random_index ← RandomInt(0, n-1)
+    D_bootstrap.append(D[random_index])
+  END FOR
+  RETURN D_bootstrap
+END PROCEDURE
+
+PROCEDURE RandomlySelectKFeatures(D, k):
+  all_features ← GetAllFeatures(D)
+  m ← |all_features|
+  selected_features ← RandomSample(all_features, min(k, m))
+  RETURN selected_features
+END PROCEDURE
+
+PROCEDURE FindBestSplit(D, features_subset):
+  best_gain ← -∞
+  best_feature ← NULL
+  best_threshold ← NULL
+  
+  FOR EACH feature IN features_subset DO
+    // Try different threshold values
+    thresholds ← GetUniqueValues(D, feature)
+    
+    FOR EACH threshold IN thresholds DO
+      D_left ← {samples where feature ≤ threshold}
+      D_right ← {samples where feature > threshold}
+      
+      // Calculate information gain (or Gini impurity reduction)
+      gain ← CalculateInformationGain(D, D_left, D_right)
+      
+      IF gain > best_gain THEN
+        best_gain ← gain
+        best_feature ← feature
+        best_threshold ← threshold
+      END IF
+    END FOR
+  END FOR
+  
+  RETURN best_feature, best_threshold
+END PROCEDURE
+
+PROCEDURE CalculateInformationGain(D, D_left, D_right):
+  n ← |D|
+  n_left ← |D_left|
+  n_right ← |D_right|
+  
+  // Calculate Gini impurity
+  gini_parent ← GiniImpurity(D)
+  gini_children ← (n_left/n) × GiniImpurity(D_left) + 
+                   (n_right/n) × GiniImpurity(D_right)
+  
+  gain ← gini_parent - gini_children
+  RETURN gain
+END PROCEDURE
+
+PROCEDURE GiniImpurity(D):
+  class_counts ← CountClasses(D)
+  n ← |D|
+  gini ← 1.0
+  
+  FOR EACH class_count IN class_counts DO
+    probability ← class_count / n
+    gini ← gini - probability²
+  END FOR
+  
+  RETURN gini
+END PROCEDURE
+
+PROCEDURE MajorityVote(predictions):
+  class_counts ← CountOccurrences(predictions)
+  majority_class ← ClassWithMaxCount(class_counts)
+  RETURN majority_class
+END PROCEDURE
+
+===============================================
+COMPLEXITY ANALYSIS
+===============================================
+
+Time Complexity:
+  Training: O(T × n × log(n) × k × d)
+    where T = number of trees
+          n = number of samples
+          k = features considered per split
+          d = tree depth
+  
+  Prediction: O(T × d)
+    where T = number of trees
+          d = average tree depth
+
+Space Complexity: O(T × d)
+
+Advantages:
+  + Reduces overfitting through averaging
+  + Handles high-dimensional data well
+  + Robust to outliers and noise
+  + Provides feature importance estimates
+  + Can handle both classification and regression
+
+Disadvantages:
+  - Less interpretable than single decision tree
+  - Computationally expensive for large datasets
+  - Memory intensive with many trees
+  - Slower prediction than single tree

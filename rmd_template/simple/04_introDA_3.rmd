@@ -1,0 +1,600 @@
+---
+title: "More Statistical Concepts"
+author: "Ziyuan Huang"
+date: "Last Updated: `r Sys.Date()`"
+output: 
+  slidy_presentation:
+    incremental: true 
+---
+
+## All of Statistics
+
+- The Only Equation You Will Ever Need! (Field, Miles & Field, 2012)
+- Everything in statistics essentially boils down to one equation:
+- We fit models to our data, but we need to know how much error is associated.
+- Often this process is called measuring fit - as the error should be small to conclude an accurate fit of the model to the data. 
+
+$$Outcome_i = (Model) + error_i$$
+
+- **This means:** the data we observe can be predicted from the model we choose to fit to the data plus some amount of error.
+- The mean is the simplest statistical model - it's a hypothetical value that summarizes our data.
+
+## The Mean as a Statistical Model
+
+- Consider an example: 5 statistics lecturers with the following number of friends: 1, 2, 3, 3, 4
+- The mean is: (1 + 2 + 3 + 3 + 4)/5 = **2.6 friends**
+- But 2.6 friends is impossible (unless you befriend someone's arm!) - so the mean is a **hypothetical value**
+- The mean is a **model** created to summarize our data
+- Just like a bridge engineer uses a small-scale model to predict how a full-sized bridge behaves, we use sample statistics to infer about populations
+
+## Measuring Fit 
+
+- Measuring the fit of your statistical model lets us know how well it represents reality. 
+- No statistical model is a perfect representation. 
+- For instance, mean is a model of what happens in the real world as the "typical score".
+- We assess models by comparing observed data to the model we've fitted (Field et al., 2012)
+- First, let's look at how to calculate multiple models at once with the `apply` family. 
+
+## Utilizing the Power of the 'apply()' Functions 
+
+- The `apply` family allows vectorized operations - faster and cleaner than loops
+- **Modern alternative:** `dplyr` and `purrr` packages (tidyverse)
+
+- **apply()**
+    - Arguments = apply(X, MARGIN, FUN)
+    - Objective = Apply a function to the rows (1) or columns (2)
+    - Input = Data frame or matrix
+    - Output = vector, list, array
+    
+```{r}
+options(scipen = 20)
+# Apply mean to each column (MARGIN = 2) of quakes dataset
+round(apply(quakes, 2, mean), 2)
+```
+
+## Utilizing the Power of the 'lapply' Functions 
+
+- **lapply()** - "list apply"
+    - Arguments = lapply(X, FUN)
+    - Objective = Apply a function to all elements of the input
+    - Input = List, vector or data frame
+    - Output = **list** (always returns a list)
+    
+```{r}
+# Returns a list - useful when outputs have different lengths
+lapply(quakes, mean)
+```
+
+## Utilizing the Power of the 'sapply' Functions 
+
+- **sapply()** - "simplified apply"
+    - Arguments = sapply(X, FUN)
+    - Same as lapply, but **simplifies** output when possible
+    - Output = vector or matrix (if possible), otherwise list
+
+```{r}
+# Returns a named vector - cleaner for simple operations
+round(sapply(quakes, mean), 2)
+```
+
+## Utilizing the Power of the 'tapply' Functions 
+
+- **tapply()** - "table apply"
+    - Arguments = tapply(X, INDEX, FUN)
+    - Objective = Apply function to groups defined by factor(s)
+    - Perfect for group-wise calculations (like means by category)
+
+```{r}
+# Calculate mean magnitude by number of stations
+head(tapply(quakes$mag,           # dependent variable
+            list(quakes$stations), # grouping variable(s)
+            mean),                 # function
+     10)  # show first 10
+```
+
+## Modern Alternative: dplyr
+
+```{r message=FALSE}
+library(dplyr)
+
+# Same calculations using tidyverse (more readable)
+quakes |>
+  group_by(stations) |>
+  summarise(mean_mag = mean(mag),
+            sd_mag = sd(mag),
+            n = n()) |>
+  head(10)
+```
+
+## Measuring Fit  
+
+- If we use the mean as our model, we may measure "fit" or error to the model by seeing how much scores vary around that mean. 
+- We can start by thinking about raw deviations:
+
+    - **Definition** - a deviation is the difference between the mean and an actual data point.
+    - They can be calculated by taking each score and subtracting the mean from it
+    $$ deviance = outcome_i - model_i $$
+
+## Sum of Squared Errors 
+
+- We could then add the deviations to find out the total error.
+- **Problem:** Deviations cancel out because they are centered around the mean: positive and negative values sum to zero. 
+- **Example (Field et al., 2012):** Lecturer friends: 1, 2, 3, 3, 4 with mean = 2.6
+  - Deviations: (-1.6) + (-0.6) + (0.4) + (0.4) + (1.4) = **0** (but there IS error!)
+- **Solution:** Square each deviation to remove negative signs
+- **Sum of Squared Errors (SS)** = (-1.6)² + (-0.6)² + (0.4)² + (0.4)² + (1.4)² = **5.20**
+
+$$SS = \sum_{i=1}^{n}(x_{i} - \bar{x})^2$$
+
+## From SS to Variance
+
+- The SS is a good measure of accuracy, but it depends on the amount of data collected.
+- **More data points = higher SS** (even if model fits equally well)
+- To overcome this, we calculate the **average error** by dividing SS by degrees of freedom:
+
+$$Variance (s^2) = \frac{SS}{N-1} = \frac{\sum_{i=1}^{n}(x_{i} - \bar{x})^2}{N-1}$$
+
+- For our lecturer example: Variance = 5.20 / 4 = **1.3 friends²**
+- Problem: "friends squared" doesn't make sense!
+- **Solution:** Take the square root → **Standard Deviation** = √1.3 = **1.14 friends**
+
+## Mean Squared Error 
+
+- Although the SS is a good measure of the accuracy of our model, it depends on the amount of data collected. 
+    - To overcome this problem, we calculate the average squared error:
+
+$$ MSE = \frac {SS} {df} = \frac {\sum_{i=1}^{n}(outcome_i-model_i)^2} {N-1} $$
+
+- This formula should look familiar - mean squared error is equivalent to the **variance**.
+- **Critical distinction:**
+  - For **populations** (when you have ALL data): divide by N
+  - For **samples** (estimating population): divide by N-1 (degrees of freedom)
+- Why N-1? Because we need to account for using our sample mean as an estimate of the population mean.
+
+## Calculating Degrees of Freedom 
+
+- **Definition** - the number of values in a calculation that are free to vary.
+
+**The Rugby Team Analogy (Field et al., 2012):**
+
+- Imagine you're a rugby team manager with 15 empty position slots
+- When the 1st player arrives: you have **15 choices** for their position
+- When the 2nd player arrives: you have **14 choices**
+- ... continue until 14 positions are filled...
+- When the 15th player arrives: you have **NO choice** - only one position left!
+- **Degrees of freedom = 15 - 1 = 14**
+
+**In statistics:** If we use the sample mean to estimate the population mean, we hold one parameter constant. Only N-1 values are free to vary while keeping that mean constant. 
+
+## Calculating Errors - Summary 
+
+- Interpreting SD as a measure of model fit:
+  
+    - **Large SD (relative to mean)** = poor model fit - data points are distant from the mean
+    - **Small SD (relative to mean)** = better model fit - data points cluster close to the mean 
+    - **SD = 0** would mean all scores were identical
+    - Remember that SD is based on the scale of the variable
+    - We use SD rather than variance because it's in the original units (interpretable)
+
+- **Visual insight:** A large standard deviation makes distributions look "fatter" and more spread out, while a small SD makes distributions look more "pointy" with scores clustered near the mean (Field et al., 2012)
+
+## The Standard Error 
+
+- **Standard Deviation** tells us how well the mean represents the sample data.
+- But what if we want to know how well the sample mean represents the **population mean**?
+- Different samples from the same population will have slightly different means (**sampling variation**)
+- The **Standard Error (SE)** is the standard deviation of sample means
+
+```{r, echo = FALSE, out.width="50%", fig.align='center'}
+knitr::include_graphics("pictures/standard_error.png")
+```
+
+## Understanding the Standard Error
+
+- **Key Distinction (Field et al., 2012):**
+  - **Standard Deviation:** How much individual scores vary around the sample mean
+  - **Standard Error:** How much sample means vary around the population mean
+
+- **Interpretation:**
+  - **Large SE** (relative to sample mean) = lots of variability between sample means → our sample might not be representative
+  - **Small SE** = most sample means are similar to population mean → our sample is likely accurate
+
+$$SE = \frac{s}{\sqrt{N}}$$
+
+## Standard Error Applied 
+
+- The previous slides describe the concept of a **sampling distribution**.
+- A sampling distribution is the frequency distribution of sample means from the same population.
+- In real life, we don't actually run multiple samples.
+
+**Central Limit Theorem:**
+
+- As sample size increases (N > 30), the sampling distribution of means approximates a **normal distribution**
+- The mean of this distribution equals the population mean (μ)
+- The SD of this distribution equals σ/√N
+
+**Law of Large Numbers:**
+
+- As sample size increases, the sample mean approaches the population mean 
+    
+## Standard Error Applied 
+    
+- Therefore, we can say that the mean approximates $\mu$ (the population mean) with large samples.
+- However, the sampling distribution has a different dispersion than the sample distribution ... so we can estimate the standard deviation of the sample distribution (standard error) by dividing by the square root of N from our one sample. 
+- The SD and the SE will tell you the same thing about model fit. 
+
+```{r}
+psych::describe(quakes$mag)
+```
+
+## Confidence Intervals 
+
+- **Definition** - a range of values within which we believe the population parameter falls, along with a probability that the interval correctly estimates the true value.
+
+**The Japanese Quail Example (Field et al., 2012):**
+
+- Sample mean sperm release = 17 million
+- True population mean (unknown) = 15 million  
+- Wide interval (12-22 million): Contains true value ✓
+- Narrow interval (16-18 million): Misses true value ✗
+
+- The **level of confidence** (1 - α) is usually expressed as 95% or 99%
+- A 95% CI means: if we collected 100 samples, approximately 95 of those CIs would contain the true population mean
+
+```{r, echo = FALSE, out.width="50%", fig.align='center'}
+knitr::include_graphics("pictures/confidence_intervals.png")
+```
+
+## Confidence Intervals for Z-scores 
+
+- Key z-score cutoffs: **±1.96** (95%) and **±2.58** (99%)
+- For large samples (N > 30), we can use z-scores
+- For small samples, use the **t-distribution** (which adjusts for sample size)
+
+**Confidence Interval Formula:**
+
+- **Upper limit:** $\bar{X} + (z \times SE)$
+- **Lower limit:** $\bar{X} - (z \times SE)$
+
+**Why use SE?** Because we're estimating where the population mean falls, and SE tells us how much sample means vary from the population mean.
+
+**Note:** The mean is always in the CENTER of the confidence interval. A narrow CI means our estimate is precise; a wide CI means uncertainty. 
+       
+## Calculating Confidence Intervals 
+       
+- We use z-score properties to set the confidence we seek. 
+- For large samples, z = 1.96 for 95% CI; z = 2.58 for 99% CI
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+# Calculate means and standard errors for quakes dataset
+M <- apply(quakes, 2, mean)
+SE <- apply(quakes, 2, function(x) sd(x) / sqrt(length(x)))
+
+# 95% Confidence Interval (using z = 1.96)
+CI_95_lower <- M - 1.96 * SE
+CI_95_upper <- M + 1.96 * SE
+
+# Display results in a clean format
+data.frame(
+  Variable = names(M),
+  Mean = round(M, 2),
+  SE = round(SE, 2),
+  CI_Lower = round(CI_95_lower, 2),
+  CI_Upper = round(CI_95_upper, 2)
+)
+```
+
+## Modern R: Using tidyverse for CIs
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+library(dplyr)
+library(tidyr)
+
+quakes |>
+  summarise(across(everything(), 
+    list(mean = mean, 
+         se = ~sd(.x)/sqrt(length(.x))))) |>
+  pivot_longer(everything(), 
+               names_to = c("variable", "stat"), 
+               names_sep = "_") |>
+  pivot_wider(names_from = stat, values_from = value) |>
+  mutate(CI_lower = mean - 1.96 * se,
+         CI_upper = mean + 1.96 * se) |>
+  mutate(across(where(is.numeric), ~round(.x, 2)))
+```
+
+## Testing Hypotheses - (NHST) 
+
+- **The Null Hypothesis Significance Testing** involves drawing inferences about two contrasting propositions *(each called a hypothesis)* relating to population parameters.
+
+**The Lady Tasting Tea (Fisher, 1925):**
+
+- A woman claimed she could tell whether milk or tea was added first to a cup
+- Fisher tested her with cups arranged in different orders
+- With 2 cups: 50% chance of guessing correctly (not convincing!)
+- With 6 cups: Only 5% chance of guessing correctly (1 in 20)
+- Only when there's a very small probability of success by chance should we believe it's genuine
+
+**The Framework:**
+
+- H₀ (Null hypothesis): No effect exists (existing theory)
+- H₁ (Alternative hypothesis): Effect does exist (complement of H₀)
+- We either **reject H₀** (significant) or **fail to reject H₀** (not significant)
+- **Important:** We never "accept" the null or "accept" the alternative!
+
+## Why p < .05? 
+
+- Fisher (1925) suggested we should be **95% confident** before believing a result is genuine
+- This means only a **5% chance** (p = .05) of the result occurring if H₀ is true
+- **But Fisher himself warned:** "No scientific worker has a fixed level of significance at which from year to year, and in all circumstances, he rejects hypotheses; he rather gives his mind to each particular case in the light of his evidence and his ideas"
+
+**The problem:** Critical values (.05, .02, .01) became popular because Fisher published tables for these specific values in his 1925 textbook - it was practical, not principled! (Field et al., 2012)
+
+## Interpreting NHST 
+
+- **Does a significant result tell us the effect is important?**
+    - **No!** Statistical significance ≠ practical importance
+    - Very small, unimportant effects can be "significant" with large samples (Field & Hole, 2003)
+
+- **Does a non-significant result prove the null is true?**
+    - **No!** It only means the effect wasn't large enough to detect
+    - "The null hypothesis is never true" - Cohen (1990)
+    - Even tiny differences (e.g., 10 vs 10.00001) are real differences!
+
+- **Does a significant result prove the alternative is true?**
+    - **No!** We're using probabilistic reasoning
+    - If p < .05, we're saying "this is unlikely IF the null were true"
+    - We cannot logically conclude "therefore the null is definitely false"
+
+**The fundamental problem:** NHST encourages all-or-nothing thinking
+    
+## Test Statistics 
+
+- A test statistic has a **known frequency distribution** - we know how often different values occur
+- Common test statistics: *t*, *F*, *χ²* (chi-square)
+- The basic principle (Field et al., 2012):
+
+$$Test\;Statistic = \frac{systematic\;variation}{unsystematic\;variation} = \frac{variance\;explained\;by\;model}{variance\;not\;explained\;by\;model}$$
+
+**Interpretation:**
+
+- If model is good → explains more variance than it can't explain → test statistic > 1
+- As test statistic gets **larger**, probability of occurring by chance gets **smaller**
+- When p < .05, we conclude the model explains a sufficient amount of variation
+
+**Analogy:** Like knowing the distribution of death ages - if someone is 110, we know that's very unlikely (very small probability).
+
+## Types of Tests 
+
+- **One-Tailed Test:** Directional hypothesis (predicting the direction of effect)
+  - Example: "Reading this book INCREASES desire to learn statistics"
+  - Look at only ONE end of the distribution
+  - Smaller test statistic needed for significance (all .05 in one tail)
+  - **Risk:** If prediction is wrong direction, you'll miss the effect!
+
+- **Two-Tailed Test:** Non-directional hypothesis
+  - Example: "Reading this book affects desire to learn statistics (could increase or decrease)"
+  - Look at BOTH ends of the distribution
+  - Split α across both tails: .025 in each for 95% confidence
+  - **Safer** but requires larger test statistic
+
+```{r, echo = FALSE, out.width="50%", fig.align='center'}
+knitr::include_graphics("pictures/one-tailed-vs-two-tailed-test.jpg")
+```
+
+**Important:** You cannot change from two-tailed to one-tailed AFTER seeing the data!
+
+## The Potential Errors 
+
+- **Hypothesis testing** can result in one of four different outcomes: 
+
+    1. H0 is true and the test correctly fails to reject H0
+    2. H0 is false and the test correctly rejects H0
+    3. H0 is true and the test incorrectly rejects H0 (called Type I error)
+    4. H0 is false and the test incorrectly fails to reject H0 (called Type II error)
+    
+```{r, echo = FALSE, out.width="75%", fig.align='center'}
+knitr::include_graphics("pictures/hypo_error_chart.png")
+```
+
+## Type I Errors 
+
+- **Type I Error (False Positive):** Rejecting H₀ when it's actually true
+- The probability of Type I error = **α** = P(rejecting H₀ | H₀ is true) 
+- Occurs when we conclude there's a genuine effect when there isn't
+- **At α = .05:** If we replicate 100 times with NO real effect, we'd falsely detect an "effect" about 5 times
+
+**The Trade-off:** Making α smaller (more conservative) reduces Type I errors but increases Type II errors
+
+## Type II Errors 
+
+- **Type II Error (False Negative):** Failing to reject H₀ when it's actually false
+- The probability of Type II error = **β** = P(not rejecting H₀ | H₀ is false)
+- Occurs when we miss a genuine effect that exists in the population
+- **Cohen's recommendation:** Maximum acceptable β = .20 (20%)
+  - This means at most 1 in 5 genuine effects should be missed
+
+## The Error Trade-off
+
+```{r, echo = FALSE, out.width="75%", fig.align='center'}
+knitr::include_graphics("pictures/hypo_error_chart.png")
+```
+
+**Key insight:** We cannot minimize both errors simultaneously. Reducing one increases the other.
+
+## Power 
+
+- **Power** = Probability of detecting an effect that genuinely exists
+- Power = 1 - β = P(rejecting H₀ | H₀ is false)
+- **Cohen's recommendation:** Aim for power ≥ .80 (80% chance of detecting real effects)
+
+**Four interconnected quantities:**
+
+1. Sample size (N)
+2. Effect size in the population
+3. Alpha level (α) 
+4. Power (1 - β)
+
+**Key principle:** Knowing any three, you can calculate the fourth!
+
+## Power of the Test 
+
+- **Power is influenced by:**
+
+    - **Effect size:** Larger effects are easier to detect
+         - SD (smaller = more power)
+         - Mean differences (larger = more power)
+
+    - **Alpha level:** Larger α = more power (but more Type I errors)
+
+    - **Type of test:** One-tailed tests have more power (but riskier)
+
+    - **Sample size:** Larger N = more power (most practical lever)
+
+**Cohen's (1992) guidelines for N with α = .05 and power = .80:**
+
+- Small effect (r = .1): Need **783** participants
+- Medium effect (r = .3): Need **85** participants  
+- Large effect (r = .5): Need **28** participants
+
+## Effect Sizes 
+
+- **The Solution to NHST Problems** (Field et al., 2012)
+- Just because a test is "significant" doesn't mean the effect is important!
+- An **effect size** is a standardized measure of the magnitude of an observed effect
+
+**Why effect sizes matter:**
+
+- **Standardized** = comparable across studies (meta-analysis)
+- **Not dependent on sample size** (unlike p-values)
+- **Allows objective evaluation** of the practical importance of findings
+- **APA recommends** reporting effect sizes in all publications
+
+## Why Not Just Use p-values?
+
+- p-values depend heavily on **sample size**
+- With N = 10,000, even trivially small effects become "significant"
+- A "significant" effect might explain only 0.1% of variance - is that meaningful?
+- **Effect sizes give context** that p-values lack
+
+**Field et al. (2012):** "The use of effect sizes strikes a balance between using arbitrary cut-off points such as p < .05 and assessing whether an effect is meaningful within the research context."
+  
+## Effect Size Measures 
+
+- There are **several effect size measures** that can be used:
+
+    - **Cohen's d** - standardized mean difference (good for comparing groups)
+    - **Pearson's r** - correlation coefficient (versatile, bounded 0-1)
+    - **Glass' Δ** - uses control group SD only
+    - **Hedges' g** - corrects Cohen's d for small samples
+    - **R²** - proportion of variance explained
+    - **Odds Ratio** - for categorical outcomes
+
+**Field's preference:** Pearson's r because it's constrained between 0 (no effect) and 1 (perfect effect)
+
+**Note:** r is not linear - r = .6 is not twice as big as r = .3!
+
+## Cohen's Effect Size Guidelines
+
+- **r = .10, d = .20 (small effect):**
+    - The effect explains **1%** of the total variance
+    - Example: Barely noticeable difference
+
+- **r = .30, d = .50 (medium effect):**
+    - The effect accounts for **9%** of the total variance
+    - Example: Visible to careful observation
+
+- **r = .50, d = .80 (large effect):**
+    - The effect accounts for **25%** of the variance
+    - Example: Obvious and substantial
+
+**Important caveat (Baguley, 2004; Lenth, 2001):**
+
+- These are "canned" guidelines - not absolute rules
+- Effect size should be evaluated **within the research context**
+- A "small" effect on mortality might be hugely important!
+- A "large" effect on trivial outcomes might be meaningless
+
+## Controlling for Multiple Comparisons
+
+- **Family-wise error rate (FWER):** Probability of making one or more Type I errors across multiple tests
+- **Experiment-wise error rate:** Proportion of experiments with at least one Type I error
+
+**Common corrections:**
+
+- **Bonferroni:** Divide α by number of comparisons (conservative)
+- **Šidák-Bonferroni:** Slightly less conservative than Bonferroni  
+- **Tukey HSD:** For all pairwise comparisons
+- **Scheffé:** Most conservative, for complex comparisons
+- **Holm:** Step-down procedure (more powerful than Bonferroni)
+- **Benjamini-Hochberg (FDR):** Controls false discovery rate (more lenient)
+
+## Example of an Effect Size  
+
+```{r message = FALSE, warning = FALSE}
+library(MOTE)
+
+# Calculate group statistics using tapply
+M <- tapply(quakes$mag, quakes$stations, mean)
+STDEV <- tapply(quakes$mag, quakes$stations, sd)
+N <- tapply(quakes$mag, quakes$stations, length)
+
+# View first few means
+head(M)
+
+# Compare station 10 to 11 using Cohen's d for independent samples
+effect <- d.ind.t(m1 = M[1], m2 = M[2],
+                  sd1 = STDEV[1], sd2 = STDEV[2],
+                  n1 = N[1], n2 = N[2], a = .05)
+
+cat("Cohen's d =", effect$d, "\n")
+cat("Interpretation:", 
+    ifelse(abs(as.numeric(effect$d)) < 0.2, "negligible",
+    ifelse(abs(as.numeric(effect$d)) < 0.5, "small",
+    ifelse(abs(as.numeric(effect$d)) < 0.8, "medium", "large"))), "effect")
+```
+
+## Modern R: Using effectsize Package
+
+```{r message = FALSE, warning = FALSE}
+# Alternative using effectsize package (more modern approach)
+library(effectsize)
+
+# Create a simple comparison
+group1 <- quakes$mag[quakes$stations <= 20]
+group2 <- quakes$mag[quakes$stations > 20 & quakes$stations <= 40]
+
+# Calculate Cohen's d with confidence interval
+cohens_d(group1, group2)
+```
+    
+## Summary
+
+In this section, you've learned about:
+  
+- **Model Fit:** The fundamental equation: Outcome = Model + Error
+- **Deviance, SS, Variance, SD:** How we measure how well the mean represents data
+- **Degrees of Freedom:** The rugby team analogy - N-1 values free to vary
+- **Standard Error:** How well our sample mean estimates the population mean
+- **Confidence Intervals:** Ranges where population parameters likely fall
+- **NHST:** Lady Tasting Tea, p < .05, and what significance really means
+- **Type I & II Errors:** False positives, false negatives, and the trade-off
+- **Power:** Probability of detecting real effects (aim for ≥ .80)
+- **Effect Sizes:** Cohen's d and r - measuring practical importance
+
+## Key Takeaways
+
+1. **Everything is Model + Error** - this is the foundation of statistics
+2. **Statistical significance ≠ practical importance** - always report effect sizes
+3. **The null is never exactly true** - Cohen (1990)
+4. **p < .05 is arbitrary** - Fisher chose it for convenience, not principle
+5. **Sample size matters** for power, not just for significance
+6. **Use confidence intervals** - they tell you more than p-values alone
+
+## References
+
+- Cohen, J. (1988, 1992). Statistical power analysis for the behavioral sciences.
+- Cohen, J. (1990). Things I have learned (so far). *American Psychologist, 45*(12), 1304-1312.
+- Cohen, J. (1994). The earth is round (p < .05). *American Psychologist, 49*(12), 997-1003.
+- Field, A., Miles, J., & Field, Z. (2012). *Discovering statistics using R*. SAGE Publications.
+- Fisher, R. A. (1925/1991). *Statistical methods for research workers*. 

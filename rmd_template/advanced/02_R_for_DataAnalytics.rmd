@@ -1,0 +1,1943 @@
+---
+title: "Week 02: R for Data Analytics"
+author: "Ziyuan Huang"
+date: "Last Updated: `r format(Sys.Date(), '%B %d, %Y')`"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    toc_depth: 3
+    theme: cosmo
+    highlight: tango
+    code_folding: show
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  warning = FALSE,
+  message = FALSE,
+  fig.align = 'center',
+  fig.width = 8,
+  fig.height = 5
+)
+
+# Load seedhash library for reproducible seed generation
+library(seedhash)
+
+# Create a generator with default range (0 to 2^31 - 1)
+gen <- SeedHashGenerator$new("A dog is a man's best friend")
+
+# Generate seeds for reproducibility
+seeds <- gen$generate_seeds(10)
+
+# Set the first seed for this session
+set.seed(seeds[1])
+
+cat("MD5 Hash:", gen$get_hash(), "\n")
+cat("Using seed:", seeds[1], "\n")
+```
+
+# Introduction
+
+## 1. Overview
+
+This tutorial demonstrates how to use R to perform **data analytics** tasks covered in Week 02. We'll explore:
+
+- **Descriptive Analytics**: Understanding what happened
+- **Predictive Analytics**: Predicting what could happen  
+- **Prescriptive Analytics**: Determining what should happen
+
+## 2. Learning Objectives
+
+By the end of this tutorial, you will be able to:
+
+1. Load and explore datasets in R
+2. Calculate descriptive statistics (central tendency, dispersion)
+3. Create frequency distributions and visualizations
+4. Understand different variable types and measurements
+5. Build simple predictive models
+6. Apply the research process using R
+
+## 3. Required Packages
+
+```{r load-packages}
+# Install packages if needed (uncomment to install)
+# install.packages(c("tidyverse", "ggplot2", "dplyr", "knitr", "kableExtra"))
+# install.packages("seedhash")  # For reproducible seed generation
+
+# Load required packages
+library(tidyverse)    # Data manipulation and visualization
+library(ggplot2)      # Advanced plotting
+library(dplyr)        # Data manipulation
+library(knitr)        # Table formatting
+library(kableExtra)   # Enhanced tables
+library(seedhash)     # Reproducible seed generation
+
+# Display seed information
+cat("\n=== REPRODUCIBLE SEED INFORMATION ===")
+cat("\nGenerator Name: A dog is a man's best friend")
+cat("\nMD5 Hash:", gen$get_hash())
+cat("\nAvailable Seeds:", paste(seeds[1:5], collapse = ", "), "...\n\n")
+```
+
+---
+
+# Part 1: Understanding Data Types
+
+## 1.1 Variable Types in R
+
+R handles different types of variables. Let's explore them:
+
+> **Key term – measurement level:** Field, Miles, and Field (2012, ch. 2) emphasize that correctly classifying each variable's measurement level determines which descriptive summaries and hypothesis tests are valid. Treating an ordinal scale (for example, satisfaction ratings) as if it were interval can distort estimates because the distance between categories is not guaranteed to be equal (Field et al., 2012).
+
+```{r variable-types}
+# Numeric (continuous) variables
+age <- 25
+height <- 175.5
+temperature <- 98.6
+
+# Integer variables
+num_students <- 30L
+year <- 2025L
+
+# Character (string) variables
+name <- "John Doe"
+city <- "Washington DC"
+
+# Logical (boolean) variables
+is_student <- TRUE
+passed_exam <- FALSE
+
+# Factor (categorical) variables
+education_level <- factor(c("High School", "Bachelor", "Master", "PhD"))
+grade <- factor(c("A", "B", "C", "D", "F"), ordered = TRUE)
+
+# Check variable types
+cat("Type of age:", class(age), "\n")
+cat("Type of name:", class(name), "\n")
+cat("Type of is_student:", class(is_student), "\n")
+cat("Type of education_level:", class(education_level), "\n")
+```
+
+## 1.2 Categorical Variables
+
+Categorical variables capture group membership. Field et al. (2012, ch. 2) note that we summarize them with counts or proportions and we model them with tests designed for frequencies (such as the chi-square test introduced later in Part 5).
+
+### 1.2.1 Binary Variables
+
+Binary (or dichotomous) variables only have two possible outcomes (Field et al., 2012). Because every case must fall into exactly one category, proportions are a natural summary and form the foundation for later logistic models.
+
+```{r binary-variables}
+# Binary variable example: Pass/Fail
+pass_fail <- c("Pass", "Fail", "Pass", "Pass", "Fail")
+pass_fail_factor <- factor(pass_fail)
+
+cat("Binary variable levels:", levels(pass_fail_factor), "\n")
+table(pass_fail_factor)
+```
+
+### 1.2.2 Nominal Variables
+
+Nominal scales label unordered categories such as department names. Field et al. (2012) highlight that although the numbers we assign to these categories are arbitrary, the counts still convey how often each outcome appears.
+
+```{r nominal-variables}
+# Nominal: Categories without order
+departments <- factor(c("HR", "IT", "Finance", "Marketing", "IT", "HR", "Finance"))
+
+cat("Department frequency:\n")
+table(departments)
+
+# Visualize
+barplot(table(departments), 
+        main = "Department Distribution",
+        col = "steelblue",
+        ylab = "Frequency",
+        las = 1)
+```
+
+### 1.2.3 Ordinal Variables
+
+Ordinal variables preserve order but not equal spacing between categories (Field et al., 2012). Treat medians or percentiles as your primary summaries because means can hide the unequal steps.
+
+```{r ordinal-variables}
+# Ordinal: Categories with logical order
+satisfaction <- factor(
+  c("Very Unsatisfied", "Unsatisfied", "Neutral", "Satisfied", "Very Satisfied",
+    "Satisfied", "Neutral", "Very Satisfied", "Satisfied", "Unsatisfied"),
+  levels = c("Very Unsatisfied", "Unsatisfied", "Neutral", "Satisfied", "Very Satisfied"),
+  ordered = TRUE
+)
+
+cat("Satisfaction levels:\n")
+print(table(satisfaction))
+
+# Visualize with ordered categories
+barplot(table(satisfaction),
+        main = "Customer Satisfaction Survey",
+        col = rainbow(5),
+        ylab = "Count",
+        las = 2,
+        cex.names = 0.8)
+```
+
+## 1.3 Continuous Variables
+
+Continuous variables have meaningful numeric scales, allowing arithmetic operations. Field et al. (2012) distinguish between interval scales (equal steps without a true zero) and ratio scales (equal steps with a meaningful zero), which guides whether ratios like "twice as much" are interpretable.
+
+### 1.3.1 Interval Variables
+
+```{r interval-variables}
+# Interval: Equal intervals but no true zero (e.g., temperature in Celsius)
+temperatures <- c(15, 18, 22, 25, 20, 16, 19, 23, 21, 17)
+
+cat("Temperature Statistics:\n")
+cat("Mean:", mean(temperatures), "°C\n")
+cat("Median:", median(temperatures), "°C\n")
+cat("Range:", range(temperatures)[1], "to", range(temperatures)[2], "°C\n")
+
+# Note: 0°C doesn't mean "no temperature"
+hist(temperatures,
+     main = "Temperature Distribution",
+     xlab = "Temperature (°C)",
+     col = "lightblue",
+     border = "white")
+```
+
+### 1.3.2 Ratio Variables
+
+```{r ratio-variables}
+# Ratio: Equal intervals AND true zero (e.g., height, weight, income)
+heights <- c(160, 175, 182, 168, 155, 190, 172, 165, 178, 185)
+
+cat("Height Statistics:\n")
+cat("Mean:", mean(heights), "cm\n")
+cat("Median:", median(heights), "cm\n")
+cat("Note: 0 cm would mean no height (true zero)\n")
+
+# Ratio calculations make sense
+cat("\nRatio example: 180cm is", 180/90, "times taller than 90cm\n")
+
+hist(heights,
+     main = "Height Distribution",
+     xlab = "Height (cm)",
+     col = "coral",
+     border = "white")
+```
+
+---
+
+# Part 2: Descriptive Analytics
+
+## 2.1 Loading Data
+
+Let's work with built-in R datasets and real examples:
+
+```{r load-data}
+# Load built-in datasets
+data(iris)        # Famous flower dataset
+data(mtcars)      # Motor cars data
+data(airquality)  # Air quality measurements
+
+# Preview datasets
+cat("Iris dataset (first 6 rows):\n")
+head(iris) %>% kable() %>% kable_styling(bootstrap_options = c("striped", "hover"))
+```
+
+## 2.2 Central Tendency Measures
+
+### 2.2.1 The Mean
+
+Field et al. (2012, ch. 4) describe the mean as the balance point of a distribution: the point at which the total distance of scores above equals the total distance below. Because it uses every score, the mean is efficient but sensitive to outliers, so always pair it with a visualization to check for extreme values.
+
+```{r mean-calculation}
+# Calculate mean
+sepal_lengths <- iris$Sepal.Length
+
+mean_value <- mean(sepal_lengths)
+cat("Mean Sepal Length:", round(mean_value, 2), "cm\n")
+
+# Visualize with mean line
+hist(sepal_lengths,
+     main = "Sepal Length Distribution with Mean",
+     xlab = "Sepal Length (cm)",
+     col = "lightgreen",
+     border = "white")
+abline(v = mean_value, col = "red", lwd = 3, lty = 2)
+legend("topright", legend = paste("Mean =", round(mean_value, 2)),
+       col = "red", lty = 2, lwd = 3)
+```
+
+**Understanding the Mean:**
+
+$$\bar{X} = \frac{\sum_{i=1}^{n} x_i}{n} = \frac{x_1 + x_2 + ... + x_n}{n}$$
+
+```{r mean-calculation-manual}
+# Manual calculation to understand the formula
+sum_values <- sum(sepal_lengths)
+n_values <- length(sepal_lengths)
+manual_mean <- sum_values / n_values
+
+cat("Sum of values:", sum_values, "\n")
+cat("Number of values:", n_values, "\n")
+cat("Manual mean calculation:", round(manual_mean, 2), "\n")
+cat("R's mean() function:", round(mean(sepal_lengths), 2), "\n")
+```
+
+### 2.2.2 The Median
+
+The median splits the ordered data in half. Field et al. (2012) note that because it is based on rank rather than magnitude, the median resists the influence of extreme scores and is a better summary than the mean for skewed or ordinal data.
+
+```{r median-calculation}
+# Calculate median
+median_value <- median(sepal_lengths)
+
+cat("Median Sepal Length:", round(median_value, 2), "cm\n")
+cat("Mean Sepal Length:", round(mean_value, 2), "cm\n")
+cat("Difference:", round(abs(mean_value - median_value), 3), "cm\n")
+
+# Visualize both
+hist(sepal_lengths,
+     main = "Sepal Length: Mean vs Median",
+     xlab = "Sepal Length (cm)",
+     col = "skyblue",
+     border = "white")
+abline(v = mean_value, col = "red", lwd = 3, lty = 2)
+abline(v = median_value, col = "blue", lwd = 3, lty = 2)
+legend("topright", 
+       legend = c(paste("Mean =", round(mean_value, 2)),
+                  paste("Median =", round(median_value, 2))),
+       col = c("red", "blue"), 
+       lty = 2, 
+       lwd = 3)
+```
+
+**Finding the Median:**
+
+For odd number of values: Middle value
+For even number of values: Average of two middle values
+
+```{r median-manual}
+# Example with manual calculation
+facebook_friends <- c(22, 40, 53, 57, 93, 98, 103, 108, 116, 121, 252)
+sorted_friends <- sort(facebook_friends)
+
+cat("Sorted values:", sorted_friends, "\n")
+cat("Position of median: (n+1)/2 = (11+1)/2 =", (length(sorted_friends)+1)/2, "\n")
+cat("Median value:", median(facebook_friends), "\n")
+
+# Remove extreme value
+friends_no_extreme <- facebook_friends[facebook_friends != 252]
+cat("\nWithout extreme value (252):\n")
+cat("New median:", median(friends_no_extreme), "\n")
+cat("Change:", median(facebook_friends) - median(friends_no_extreme), "\n")
+```
+
+### 2.2.3 The Mode
+
+The mode identifies the most frequently occurring category or value. Field et al. (2012) recommend reporting it alongside the median for ordinal data because it highlights the most common response option.
+
+```{r mode-calculation}
+# R doesn't have a built-in mode function, so we create one
+get_mode <- function(x) {
+  unique_vals <- unique(x)
+  freq_table <- tabulate(match(x, unique_vals))
+  unique_vals[which.max(freq_table)]
+}
+
+# Example with discrete data
+grades <- c("A", "B", "B", "C", "B", "A", "C", "B", "D", "B", "C")
+mode_grade <- get_mode(grades)
+
+cat("Mode (most frequent grade):", mode_grade, "\n")
+cat("\nFrequency table:\n")
+print(table(grades))
+
+# Visualize
+barplot(table(grades),
+        main = "Grade Distribution (Mode in Red)",
+        col = ifelse(names(table(grades)) == mode_grade, "red", "steelblue"),
+        ylab = "Frequency")
+```
+
+### 2.2.4 Comparing Central Tendency Measures
+
+```{r central-tendency-comparison}
+# Create a comparison table
+iris_summary <- iris %>%
+  group_by(Species) %>%
+  summarise(
+    Mean = mean(Sepal.Length),
+    Median = median(Sepal.Length),
+    Min = min(Sepal.Length),
+    Max = max(Sepal.Length),
+    N = n()
+  ) %>%
+  mutate(across(where(is.numeric), ~round(., 2)))
+
+iris_summary %>%
+  kable(caption = "Central Tendency by Species") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"))
+```
+
+## 2.3 Measures of Dispersion
+
+### 2.3.1 Range
+
+The range communicates the full spread of the data (max − min). Field et al. (2012) point out that it is easy to compute yet heavily influenced by a single extreme value, so treat it as a quick diagnostic rather than a robust statistic.
+
+```{r range-calculation}
+# Calculate range
+range_vals <- range(sepal_lengths)
+range_value <- diff(range_vals)
+
+cat("Minimum:", range_vals[1], "\n")
+cat("Maximum:", range_vals[2], "\n")
+cat("Range:", range_value, "\n")
+
+# Effect of extreme values
+cat("\nEffect of extreme values:\n")
+cat("Original range:", diff(range(facebook_friends)), "\n")
+cat("Without extreme (252):", diff(range(friends_no_extreme)), "\n")
+cat("Reduction:", diff(range(facebook_friends)) - diff(range(friends_no_extreme)), "\n")
+```
+
+### 2.3.2 Interquartile Range (IQR)
+
+Field et al. (2012) advocate using the interquartile range when you want the spread of the middle 50% of scores. Because it ignores the most extreme quartiles, the IQR pairs naturally with the median for skewed distributions.
+
+```{r iqr-calculation}
+# Calculate quartiles
+q1 <- quantile(sepal_lengths, 0.25)
+q2 <- quantile(sepal_lengths, 0.50)  # This is the median
+q3 <- quantile(sepal_lengths, 0.75)
+iqr_value <- IQR(sepal_lengths)
+
+cat("Lower Quartile (Q1):", q1, "\n")
+cat("Median (Q2):", q2, "\n")
+cat("Upper Quartile (Q3):", q3, "\n")
+cat("Interquartile Range (IQR):", iqr_value, "\n")
+
+# Boxplot shows quartiles
+boxplot(sepal_lengths,
+        main = "Boxplot Showing Quartiles",
+        ylab = "Sepal Length (cm)",
+        col = "lightblue",
+        horizontal = TRUE)
+text(x = q1, y = 1.3, labels = "Q1", col = "red", cex = 1.2)
+text(x = q2, y = 1.3, labels = "Q2 (Median)", col = "red", cex = 1.2)
+text(x = q3, y = 1.3, labels = "Q3", col = "red", cex = 1.2)
+```
+
+### 2.3.3 Variance and Standard Deviation
+
+Variance averages the squared deviations from the mean, while the standard deviation returns to the original units by taking the square root (Field et al., 2012). These statistics assume an interval or ratio scale and provide the backbone for inferential models, including the t tests in Part 5.
+
+```{r variance-std}
+# Calculate variance and standard deviation
+var_value <- var(sepal_lengths)
+sd_value <- sd(sepal_lengths)
+
+cat("Variance:", round(var_value, 4), "\n")
+cat("Standard Deviation:", round(sd_value, 4), "\n")
+cat("\nInterpretation:\n")
+cat("On average, sepal lengths deviate by", round(sd_value, 2), "cm from the mean.\n")
+
+# Visualize with standard deviation bands
+mean_val <- mean(sepal_lengths)
+hist(sepal_lengths,
+     main = "Distribution with Standard Deviation",
+     xlab = "Sepal Length (cm)",
+     col = "lavender",
+     border = "white")
+abline(v = mean_val, col = "red", lwd = 2)
+abline(v = mean_val - sd_value, col = "blue", lwd = 2, lty = 2)
+abline(v = mean_val + sd_value, col = "blue", lwd = 2, lty = 2)
+legend("topright", 
+       legend = c("Mean", "± 1 SD"),
+       col = c("red", "blue"), 
+       lty = c(1, 2), 
+       lwd = 2)
+```
+
+**Understanding Variance and Standard Deviation:**
+
+$$s^2 = \frac{\sum_{i=1}^{n}(x_i - \bar{x})^2}{n-1}$$
+
+$$s = \sqrt{s^2}$$
+
+```{r variance-manual}
+# Manual calculation to understand the formula
+deviations <- sepal_lengths - mean(sepal_lengths)
+squared_deviations <- deviations^2
+sum_squared_dev <- sum(squared_deviations)
+manual_variance <- sum_squared_dev / (length(sepal_lengths) - 1)
+manual_sd <- sqrt(manual_variance)
+
+cat("Manual variance:", round(manual_variance, 4), "\n")
+cat("R's var():", round(var(sepal_lengths), 4), "\n")
+cat("Manual SD:", round(manual_sd, 4), "\n")
+cat("R's sd():", round(sd(sepal_lengths), 4), "\n")
+```
+
+### 2.3.4 Complete Dispersion Summary
+
+```{r dispersion-summary}
+# Comprehensive dispersion measures
+dispersion_summary <- data.frame(
+  Measure = c("Range", "IQR", "Variance", "Std Dev", "Coef of Variation"),
+  Value = c(
+    diff(range(sepal_lengths)),
+    IQR(sepal_lengths),
+    var(sepal_lengths),
+    sd(sepal_lengths),
+    sd(sepal_lengths) / mean(sepal_lengths) * 100
+  ),
+  Unit = c("cm", "cm", "cm²", "cm", "%")
+)
+
+dispersion_summary %>%
+  mutate(Value = round(Value, 3)) %>%
+  kable(caption = "Measures of Dispersion for Sepal Length") %>%
+  kable_styling(bootstrap_options = c("striped", "hover"))
+```
+
+## 2.4 Frequency Distributions
+
+```{r frequency-distribution}
+# Create frequency table
+sepal_length_cut <- cut(sepal_lengths, breaks = 8)
+freq_table <- table(sepal_length_cut)
+
+cat("Frequency Distribution:\n")
+print(freq_table)
+
+# Create histogram with frequency
+hist(sepal_lengths,
+     main = "Frequency Distribution of Sepal Length",
+     xlab = "Sepal Length (cm)",
+     ylab = "Frequency",
+     col = "steelblue",
+     border = "white",
+     breaks = 12)
+
+# Add density curve
+lines(density(sepal_lengths), col = "red", lwd = 3)
+legend("topright", legend = "Density Curve", col = "red", lwd = 3)
+```
+
+### 2.4.1 Distribution Shapes
+
+```{r distribution-shapes}
+# Create different distribution shapes
+par(mfrow = c(2, 2))
+
+# Normal distribution
+normal_data <- rnorm(1000, mean = 50, sd = 10)
+hist(normal_data, main = "Normal Distribution", 
+     col = "lightgreen", border = "white", xlab = "Values")
+
+# Right-skewed (positive skew)
+skewed_right <- rexp(1000, rate = 0.5)
+hist(skewed_right, main = "Right Skewed (Positive)", 
+     col = "lightcoral", border = "white", xlab = "Values")
+
+# Left-skewed (negative skew)
+skewed_left <- -rexp(1000, rate = 0.5)
+hist(skewed_left, main = "Left Skewed (Negative)", 
+     col = "lightblue", border = "white", xlab = "Values")
+
+# Uniform distribution
+uniform_data <- runif(1000, min = 0, max = 100)
+hist(uniform_data, main = "Uniform Distribution", 
+     col = "lavender", border = "white", xlab = "Values")
+
+par(mfrow = c(1, 1))
+```
+
+### 2.4.2 Describing Distribution Shape
+
+```{r distribution-describe}
+library(moments)  # For skewness and kurtosis
+
+# Calculate shape statistics
+skewness_val <- skewness(sepal_lengths)
+kurtosis_val <- kurtosis(sepal_lengths)
+
+cat("Skewness:", round(skewness_val, 3), "\n")
+cat("Interpretation:", 
+    ifelse(abs(skewness_val) < 0.5, "Approximately Symmetric",
+           ifelse(skewness_val > 0, "Right-skewed (Positive)", "Left-skewed (Negative)")), "\n\n")
+
+cat("Kurtosis:", round(kurtosis_val, 3), "\n")
+cat("Interpretation:",
+    ifelse(kurtosis_val > 3, "Leptokurtic (heavy tails)",
+           ifelse(kurtosis_val < 3, "Platykurtic (light tails)", "Mesokurtic (normal)")), "\n")
+```
+
+---
+
+# Part 3: Exploratory Data Analysis
+
+## 3.1 Summary Statistics
+
+```{r summary-stats}
+# Comprehensive summary statistics
+cat("=== IRIS DATASET SUMMARY ===\n\n")
+summary(iris)
+
+# More detailed summary by species
+iris_detailed <- iris %>%
+  group_by(Species) %>%
+  summarise(
+    N = n(),
+    Mean_Sepal_Length = mean(Sepal.Length),
+    SD_Sepal_Length = sd(Sepal.Length),
+    Mean_Sepal_Width = mean(Sepal.Width),
+    SD_Sepal_Width = sd(Sepal.Width),
+    Mean_Petal_Length = mean(Petal.Length),
+    SD_Petal_Length = sd(Petal.Length)
+  ) %>%
+  mutate(across(where(is.numeric), ~round(., 2)))
+
+iris_detailed %>%
+  kable(caption = "Detailed Summary by Species") %>%
+  kable_styling(bootstrap_options = c("striped", "hover")) %>%
+  scroll_box(width = "100%")
+```
+
+## 3.2 Data Visualization
+
+### 3.2.1 Univariate Analysis
+
+```{r univariate-viz}
+# Multiple ways to visualize single variable
+par(mfrow = c(2, 2))
+
+# Histogram
+hist(iris$Sepal.Length, 
+     main = "Histogram",
+     xlab = "Sepal Length (cm)",
+     col = "steelblue",
+     border = "white")
+
+# Density plot
+plot(density(iris$Sepal.Length),
+     main = "Density Plot",
+     xlab = "Sepal Length (cm)",
+     lwd = 2,
+     col = "darkblue")
+polygon(density(iris$Sepal.Length), col = rgb(0, 0, 1, 0.3))
+
+# Boxplot
+boxplot(iris$Sepal.Length,
+        main = "Boxplot",
+        ylab = "Sepal Length (cm)",
+        col = "lightgreen")
+
+# Q-Q plot (check normality)
+qqnorm(iris$Sepal.Length, main = "Q-Q Plot")
+qqline(iris$Sepal.Length, col = "red", lwd = 2)
+
+par(mfrow = c(1, 1))
+```
+
+### 3.2.2 Bivariate Analysis
+
+```{r bivariate-viz}
+# Relationship between two variables
+ggplot(iris, aes(x = Sepal.Length, y = Sepal.Width, color = Species)) +
+  geom_point(size = 3, alpha = 0.7) +
+  geom_smooth(method = "lm", se = FALSE) +
+  labs(
+    title = "Sepal Length vs Sepal Width by Species",
+    x = "Sepal Length (cm)",
+    y = "Sepal Width (cm)"
+  ) +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5, face = "bold"))
+```
+
+### 3.2.3 Multivariate Analysis
+
+```{r multivariate-viz}
+# Pairs plot for multiple variables
+pairs(iris[, 1:4],
+      main = "Scatterplot Matrix of Iris Dataset",
+      pch = 21,
+      bg = c("red", "green", "blue")[unclass(iris$Species)])
+```
+
+### 3.2.4 Advanced ggplot2 Visualizations
+
+```{r ggplot-advanced}
+# Faceted visualization
+ggplot(iris, aes(x = Sepal.Length, fill = Species)) +
+  geom_histogram(bins = 20, alpha = 0.7, color = "white") +
+  facet_wrap(~Species, ncol = 1) +
+  labs(
+    title = "Sepal Length Distribution by Species",
+    x = "Sepal Length (cm)",
+    y = "Frequency"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, face = "bold"),
+    legend.position = "none"
+  )
+```
+
+## 3.3 Data Quality Checks
+
+```{r data-quality}
+# Check for missing values
+cat("=== MISSING VALUES CHECK ===\n")
+missing_summary <- data.frame(
+  Variable = names(iris),
+  Missing_Count = colSums(is.na(iris)),
+  Missing_Percent = round(colSums(is.na(iris)) / nrow(iris) * 100, 2)
+)
+
+missing_summary %>%
+  kable(caption = "Missing Values Summary") %>%
+  kable_styling(bootstrap_options = c("striped", "hover"))
+
+# Check for outliers using IQR method
+detect_outliers <- function(x) {
+  q1 <- quantile(x, 0.25)
+  q3 <- quantile(x, 0.75)
+  iqr <- q3 - q1
+  lower_bound <- q1 - 1.5 * iqr
+  upper_bound <- q3 + 1.5 * iqr
+  sum(x < lower_bound | x > upper_bound)
+}
+
+cat("\n=== OUTLIER DETECTION ===\n")
+outlier_summary <- iris %>%
+  select(where(is.numeric)) %>%
+  summarise(across(everything(), detect_outliers)) %>%
+  pivot_longer(everything(), names_to = "Variable", values_to = "Outlier_Count")
+
+outlier_summary %>%
+  kable(caption = "Outlier Count by Variable (IQR Method)") %>%
+  kable_styling(bootstrap_options = c("striped", "hover"))
+```
+
+---
+
+# Part 4: Predictive Analytics
+
+## 4.1 Simple Linear Regression
+
+```{r simple-regression}
+# Build a simple linear regression model
+# Predict Sepal Width from Sepal Length
+model_simple <- lm(Sepal.Width ~ Sepal.Length, data = iris)
+
+# View model summary
+summary(model_simple)
+
+# Extract key statistics
+r_squared <- summary(model_simple)$r.squared
+adj_r_squared <- summary(model_simple)$adj.r.squared
+coef_intercept <- coef(model_simple)[1]
+coef_slope <- coef(model_simple)[2]
+
+cat("\n=== MODEL INTERPRETATION ===\n")
+cat("Equation: Sepal.Width =", round(coef_intercept, 3), "+", 
+    round(coef_slope, 3), "× Sepal.Length\n")
+cat("R-squared:", round(r_squared, 4), "\n")
+cat("Adjusted R-squared:", round(adj_r_squared, 4), "\n")
+```
+
+### 4.1.1 Visualize Regression
+
+```{r visualize-regression}
+# Plot with regression line
+ggplot(iris, aes(x = Sepal.Length, y = Sepal.Width)) +
+  geom_point(aes(color = Species), size = 3, alpha = 0.6) +
+  geom_smooth(method = "lm", se = TRUE, color = "blue", fill = "lightblue") +
+  labs(
+    title = "Simple Linear Regression: Sepal Width vs Sepal Length",
+    subtitle = paste("R² =", round(r_squared, 3)),
+    x = "Sepal Length (cm)",
+    y = "Sepal Width (cm)"
+  ) +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5, face = "bold"))
+```
+
+### 4.1.2 Model Diagnostics
+
+```{r model-diagnostics}
+# Diagnostic plots
+par(mfrow = c(2, 2))
+plot(model_simple, which = 1:4)
+par(mfrow = c(1, 1))
+
+cat("\n=== DIAGNOSTIC INTERPRETATION ===\n")
+cat("1. Residuals vs Fitted: Check for linearity and homoscedasticity\n")
+cat("2. Q-Q Plot: Check if residuals are normally distributed\n")
+cat("3. Scale-Location: Check homoscedasticity\n")
+cat("4. Residuals vs Leverage: Identify influential points\n")
+```
+
+## 4.2 Multiple Linear Regression
+
+```{r multiple-regression}
+# Build multiple regression model
+# Predict Petal Length from multiple predictors
+model_multiple <- lm(Petal.Length ~ Sepal.Length + Sepal.Width + Petal.Width, 
+                     data = iris)
+
+# View summary
+summary(model_multiple)
+
+# Compare models
+cat("\n=== MODEL COMPARISON ===\n")
+comparison <- data.frame(
+  Model = c("Simple Regression", "Multiple Regression"),
+  Predictors = c(1, 3),
+  R_squared = c(
+    summary(model_simple)$r.squared,
+    summary(model_multiple)$r.squared
+  ),
+  Adj_R_squared = c(
+    summary(model_simple)$adj.r.squared,
+    summary(model_multiple)$adj.r.squared
+  ),
+  RMSE = c(
+    sqrt(mean(model_simple$residuals^2)),
+    sqrt(mean(model_multiple$residuals^2))
+  )
+)
+
+comparison %>%
+  mutate(across(where(is.numeric), ~round(., 4))) %>%
+  kable(caption = "Model Performance Comparison") %>%
+  kable_styling(bootstrap_options = c("striped", "hover"))
+```
+
+## 4.3 Making Predictions
+
+```{r predictions}
+# Create new data for predictions
+new_data <- data.frame(
+  Sepal.Length = c(5.0, 6.0, 7.0),
+  Sepal.Width = c(3.0, 3.5, 3.2),
+  Petal.Width = c(1.5, 2.0, 2.5)
+)
+
+# Make predictions
+predictions <- predict(model_multiple, newdata = new_data, interval = "prediction")
+
+# Combine with input data
+prediction_results <- cbind(new_data, predictions) %>%
+  mutate(across(where(is.numeric), ~round(., 2)))
+
+prediction_results %>%
+  kable(caption = "Predictions with 95% Confidence Intervals") %>%
+  kable_styling(bootstrap_options = c("striped", "hover"))
+```
+
+---
+
+# Part 5: Hypothesis Testing
+
+## 5.1 Understanding Hypotheses
+
+### 5.1.1 What is a Hypothesis?
+
+A **hypothesis** is a prediction from a theory that can be tested through data collection and analysis. It's a specific, testable statement about the relationship between variables.
+
+**Key Characteristics of a Good Hypothesis:**
+
+1. **Clear and understandable** - Anyone should be able to understand what you're predicting
+2. **Testable** - You must be able to collect data to test it
+3. **Measurable** - The variables must be quantifiable
+4. **Falsifiable** - It must be possible to prove it wrong
+
+### 5.1.2 Types of Hypotheses
+
+```{r hypothesis-theory, echo=FALSE}
+hypothesis_types <- data.frame(
+  Type = c("Alternative Hypothesis (H₁)", "Null Hypothesis (H₀)", "Directional Hypothesis", "Non-directional Hypothesis"),
+  Symbol = c("H₁ or Hₐ", "H₀", "H₁ (one-tailed)", "H₁ (two-tailed)"),
+  Description = c(
+    "States that an effect WILL occur; the research prediction",
+    "States that NO effect will occur; opposite of alternative hypothesis",
+    "Predicts the DIRECTION of the effect (e.g., 'greater than', 'less than')",
+    "Predicts an effect exists but NOT its direction (e.g., 'different from')"
+  ),
+  Example = c(
+    "Manual transmission cars have higher MPG than automatic cars",
+    "Manual and automatic cars have the same MPG",
+    "Manual cars have HIGHER MPG than automatic cars",
+    "Manual and automatic cars have DIFFERENT MPG"
+  )
+)
+
+hypothesis_types %>%
+  kable(caption = "Types of Hypotheses in Statistical Testing") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed")) %>%
+  column_spec(1, bold = TRUE, width = "15em") %>%
+  column_spec(4, width = "20em")
+```
+
+### 5.1.3 Why Can't We "Prove" a Hypothesis?
+
+**Important Concept:** We can never *prove* the alternative hypothesis using statistics. We can only:
+
+- **Reject the null hypothesis** (providing support for the alternative hypothesis)
+- **Fail to reject the null hypothesis** (insufficient evidence for the alternative hypothesis)
+
+> "We cannot talk about the null hypothesis being true or the experimental hypothesis being true, we can only talk in terms of the **probability of obtaining a particular set of data** if, hypothetically speaking, the null hypothesis was true."
+> 
+> — Field, Miles, & Field (2012)
+
+```{r hypothesis-logic-flow, echo=FALSE, fig.height=5, fig.width=11, fig.align='center', warning=FALSE, message=FALSE}
+if (!requireNamespace("plotly", quietly = TRUE)) {
+  install.packages("plotly", repos = "https://cran.r-project.org")
+}
+library(plotly)
+
+# ============================================================================
+# CONFIGURATION - Optimized for R Markdown HTML output
+# ============================================================================
+config <- list(
+  # Canvas dimensions (optimized for wide display)
+  canvas_width = 150,
+  canvas_height = 85,
+  
+  # Box dimensions
+  box_width = 24,
+  box_height = 14,
+  
+  # Box center positions (manually optimized for best display)
+  box_positions = data.frame(
+    id = c("collect", "calculate", "significant", "not_significant"),
+    x = c(32, 32, 118, 118),      # x coordinates
+    y = c(60, 25, 60, 25),         # y coordinates
+    stringsAsFactors = FALSE
+  ),
+  
+  # Box styling
+  box_styles = data.frame(
+    id = c("collect", "calculate", "significant", "not_significant"),
+    fillcolor = c("#D6EAF8", "#FFF9E6", "#D5F4E6", "#FADBD8"),
+    linecolor = c("#2874A6", "#D68910", "#229954", "#A93226"),
+    linewidth = c(3.5, 3.5, 3.5, 3.5),
+    stringsAsFactors = FALSE
+  ),
+  
+  # Text content for each box
+  text_content = list(
+    collect = data.frame(
+      text = "<b>Collect Data</b>",
+      size = 18,
+      y_offset = 0,
+      stringsAsFactors = FALSE
+    ),
+    calculate = data.frame(
+      text = c(
+        "<b>Calculate p-value:</b>",
+        "Probability of data",
+        "IF H<sub>0</sub> is true"
+      ),
+      size = c(17, 15, 15),
+      y_offset = c(4, 0, -4),
+      stringsAsFactors = FALSE
+    ),
+    significant = data.frame(
+      text = c(
+        "<b>p &lt; 0.05</b>",
+        "Reject H<sub>0</sub>",
+        "Support H<sub>1</sub>"
+      ),
+      size = c(17, 15, 15),
+      y_offset = c(4, 0, -4),
+      stringsAsFactors = FALSE
+    ),
+    not_significant = data.frame(
+      text = c(
+        "<b>p ≥ 0.05</b>",
+        "Fail to Reject H<sub>0</sub>",
+        "No Support for H<sub>1</sub>"
+      ),
+      size = c(17, 15, 15),
+      y_offset = c(4, 0, -4),
+      stringsAsFactors = FALSE
+    )
+  ),
+  
+  # Arrow connections
+  arrows = data.frame(
+    from = c("collect", "calculate", "calculate"),
+    to = c("calculate", "significant", "not_significant"),
+    stringsAsFactors = FALSE
+  )
+)
+
+# ============================================================================
+# HELPER FUNCTIONS
+# ============================================================================
+
+get_box_coords <- function(box_id, config) {
+  pos <- config$box_positions[config$box_positions$id == box_id, ]
+  hw <- config$box_width / 2
+  hh <- config$box_height / 2
+  
+  list(
+    cx = pos$x, cy = pos$y,
+    x0 = pos$x - hw, x1 = pos$x + hw,
+    y0 = pos$y - hh, y1 = pos$y + hh,
+    left = pos$x - hw, right = pos$x + hw,
+    bottom = pos$y - hh, top = pos$y + hh
+  )
+}
+
+create_box_shape <- function(box_id, config) {
+  coords <- get_box_coords(box_id, config)
+  style <- config$box_styles[config$box_styles$id == box_id, ]
+  
+  list(
+    type = "rect",
+    x0 = coords$x0, x1 = coords$x1,
+    y0 = coords$y0, y1 = coords$y1,
+    fillcolor = style$fillcolor,
+    line = list(color = style$linecolor, width = style$linewidth),
+    layer = "below"
+  )
+}
+
+create_box_text <- function(box_id, config) {
+  coords <- get_box_coords(box_id, config)
+  text_data <- config$text_content[[box_id]]
+  
+  lapply(seq_len(nrow(text_data)), function(i) {
+    list(
+      x = coords$cx,
+      y = coords$cy + text_data$y_offset[i],
+      text = text_data$text[i],
+      font = list(size = text_data$size[i], color = "#1C2833", family = "Arial, sans-serif"),
+      showarrow = FALSE,
+      xanchor = "center",
+      yanchor = "middle"
+    )
+  })
+}
+
+create_arrow <- function(from_id, to_id, config) {
+  from <- get_box_coords(from_id, config)
+  to <- get_box_coords(to_id, config)
+  
+  # Determine arrow endpoints
+  if (from$cx == to$cx) {
+    # Vertical arrow
+    start_x <- from$cx
+    end_x <- to$cx
+    if (from$cy > to$cy) {
+      start_y <- from$bottom - 1
+      end_y <- to$top + 1
+    } else {
+      start_y <- from$top + 1
+      end_y <- to$bottom - 1
+    }
+  } else {
+    # Diagonal arrow
+    if (from$cx < to$cx) {
+      start_x <- from$right + 1
+      end_x <- to$left - 1
+    } else {
+      start_x <- from$left - 1
+      end_x <- to$right + 1
+    }
+    
+    # Vertical positioning for diagonal
+    if (from$cy > to$cy) {
+      start_y <- from$bottom
+      end_y <- to$cy
+    } else {
+      start_y <- from$top
+      end_y <- to$cy
+    }
+  }
+  
+  list(
+    x = end_x, y = end_y,
+    ax = start_x, ay = start_y,
+    xref = "x", yref = "y",
+    axref = "x", ayref = "y",
+    arrowhead = 2,
+    arrowsize = 1.5,
+    arrowwidth = 3,
+    arrowcolor = "#17202A",
+    showarrow = TRUE
+  )
+}
+
+# ============================================================================
+# BUILD PLOT COMPONENTS
+# ============================================================================
+
+shapes <- lapply(config$box_positions$id, create_box_shape, config = config)
+
+text_annotations <- unlist(
+  lapply(config$box_positions$id, create_box_text, config = config),
+  recursive = FALSE
+)
+
+arrow_annotations <- lapply(seq_len(nrow(config$arrows)), function(i) {
+  create_arrow(config$arrows$from[i], config$arrows$to[i], config)
+})
+
+all_annotations <- c(text_annotations, arrow_annotations)
+
+# ============================================================================
+# CREATE PLOT
+# ============================================================================
+
+flow_fig <- plot_ly() %>%
+  add_trace(
+    type = "scatter",
+    mode = "markers",
+    x = c(config$canvas_width / 2),
+    y = c(config$canvas_height / 2),
+    marker = list(size = 0.01, opacity = 0),
+    hoverinfo = "none",
+    showlegend = FALSE
+  ) %>%
+  layout(
+    title = list(
+      text = "<b>Hypothesis Testing Logic Flow</b>",
+      x = 0.5,
+      xanchor = "center",
+      font = list(size = 26, color = "#1C2833", family = "Arial, sans-serif")
+    ),
+    xaxis = list(
+      range = c(0, config$canvas_width),
+      showgrid = FALSE,
+      zeroline = FALSE,
+      showticklabels = FALSE,
+      showline = FALSE,
+      fixedrange = TRUE
+    ),
+    yaxis = list(
+      range = c(0, config$canvas_height),
+      showgrid = FALSE,
+      zeroline = FALSE,
+      showticklabels = FALSE,
+      showline = FALSE,
+      fixedrange = TRUE
+    ),
+    shapes = shapes,
+    annotations = all_annotations,
+    plot_bgcolor = "#FFFFFF",
+    paper_bgcolor = "#FFFFFF",
+    margin = list(t = 80, r = 60, b = 40, l = 60),
+    autosize = TRUE,
+    height = 500
+  ) %>%
+  config(
+    displayModeBar = FALSE,
+    responsive = TRUE
+  )
+
+flow_fig
+```
+
+**Figure: Hypothesis Testing Logic Flow**
+
+## 5.2 Hypothesis Testing in R
+
+### 5.2.1 The p-value
+
+The **p-value** is the probability of obtaining your observed data (or more extreme) **assuming the null hypothesis is true**.
+
+Field et al. (2012, ch. 9) stress that this probability is conditional: it tells us how compatible the sample is with H₀ rather than the probability that H₀ itself is true. Always interpret the p-value alongside effect sizes and research context instead of a mechanical "significant/not significant" decision (Field et al., 2012).
+
+**Interpretation:**
+- **Small p-value** (typically < 0.05): Data is unlikely under H₀ → Reject H₀
+- **Large p-value** (≥ 0.05): Data is plausible under H₀ → Fail to reject H₀
+
+**Common Significance Levels:**
+- α = 0.05 (5%) - Most common in social sciences
+- α = 0.01 (1%) - More stringent
+- α = 0.10 (10%) - More lenient (exploratory research)
+
+### 5.2.2 Example 1: One-Sample t-test
+
+**Research Question:** Is the average sepal length of iris flowers different from 6 cm?
+
+**Hypotheses:**
+- H₀: μ = 6 (population mean equals 6)
+- H₁: μ ≠ 6 (population mean is different from 6) [two-tailed]
+
+```{r one-sample-ttest}
+# One-sample t-test
+# Test if mean sepal length differs from 6 cm
+test_value <- 6
+
+# Perform the test
+result_onesample <- t.test(iris$Sepal.Length, mu = test_value)
+
+cat("=== ONE-SAMPLE T-TEST ===\n\n")
+cat("Research Question: Is mean sepal length different from", test_value, "cm?\n\n")
+cat("H₀: μ =", test_value, "\n")
+cat("H₁: μ ≠", test_value, "\n\n")
+
+print(result_onesample)
+
+cat("\n=== INTERPRETATION ===\n")
+cat("Sample mean:", round(mean(iris$Sepal.Length), 3), "cm\n")
+cat("t-statistic:", round(result_onesample$statistic, 3), "\n")
+cat("p-value:", format.pval(result_onesample$p.value, digits = 4), "\n")
+cat("95% CI: [", round(result_onesample$conf.int[1], 3), ",", 
+    round(result_onesample$conf.int[2], 3), "]\n\n")
+
+if(result_onesample$p.value < 0.05) {
+  cat("Decision: REJECT H₀ (p < 0.05)\n")
+  cat("Conclusion: The mean sepal length is significantly different from", test_value, "cm.\n")
+} else {
+  cat("Decision: FAIL TO REJECT H₀ (p ≥ 0.05)\n")
+  cat("Conclusion: Insufficient evidence that mean differs from", test_value, "cm.\n")
+}
+
+# Visualize
+hist(iris$Sepal.Length,
+     main = "Sepal Length Distribution with Test Value",
+     xlab = "Sepal Length (cm)",
+     col = "lightblue",
+     border = "white",
+     breaks = 15)
+abline(v = mean(iris$Sepal.Length), col = "red", lwd = 3, lty = 1)
+abline(v = test_value, col = "blue", lwd = 3, lty = 2)
+legend("topright", 
+       legend = c(paste("Sample Mean =", round(mean(iris$Sepal.Length), 2)),
+                  paste("Test Value =", test_value)),
+       col = c("red", "blue"), 
+       lty = c(1, 2), 
+       lwd = 3)
+```
+
+### 5.2.3 Example 2: Independent Two-Sample t-test
+
+**Research Question:** Do manual transmission cars have different fuel efficiency than automatic transmission cars?
+
+**Hypotheses:**
+- H₀: μ_manual = μ_automatic (no difference in mean MPG)
+- H₁: μ_manual ≠ μ_automatic (means are different) [two-tailed]
+
+```{r independent-ttest}
+# Independent samples t-test
+# Compare MPG between automatic and manual transmission
+
+# Prepare data
+automatic <- mtcars$mpg[mtcars$am == 0]
+manual <- mtcars$mpg[mtcars$am == 1]
+
+cat("=== INDEPENDENT TWO-SAMPLE T-TEST ===\n\n")
+cat("Research Question: Do manual and automatic cars differ in fuel efficiency?\n\n")
+cat("H₀: μ_manual = μ_automatic\n")
+cat("H₁: μ_manual ≠ μ_automatic\n\n")
+
+# Perform t-test
+result_independent <- t.test(manual, automatic, var.equal = FALSE)
+
+print(result_independent)
+
+cat("\n=== DESCRIPTIVE STATISTICS ===\n")
+cat("Automatic transmission:\n")
+cat("  n =", length(automatic), "\n")
+cat("  Mean =", round(mean(automatic), 2), "mpg\n")
+cat("  SD =", round(sd(automatic), 2), "\n\n")
+
+cat("Manual transmission:\n")
+cat("  n =", length(manual), "\n")
+cat("  Mean =", round(mean(manual), 2), "mpg\n")
+cat("  SD =", round(sd(manual), 2), "\n\n")
+
+cat("=== INTERPRETATION ===\n")
+cat("Difference in means:", round(mean(manual) - mean(automatic), 2), "mpg\n")
+cat("t-statistic:", round(result_independent$statistic, 3), "\n")
+cat("p-value:", format.pval(result_independent$p.value, digits = 4), "\n\n")
+
+if(result_independent$p.value < 0.05) {
+  cat("Decision: REJECT H₀ (p < 0.05)\n")
+  cat("Conclusion: Manual and automatic transmissions have significantly different MPG.\n")
+  cat("Manual transmission cars have", 
+      ifelse(mean(manual) > mean(automatic), "HIGHER", "LOWER"), 
+      "fuel efficiency.\n")
+} else {
+  cat("Decision: FAIL TO REJECT H₀ (p ≥ 0.05)\n")
+  cat("Conclusion: No significant difference in MPG between transmission types.\n")
+}
+
+# Visualize
+boxplot(mpg ~ am, data = mtcars,
+        names = c("Automatic", "Manual"),
+        main = "Fuel Efficiency by Transmission Type",
+        ylab = "Miles per Gallon (MPG)",
+        col = c("lightcoral", "lightgreen"),
+        border = c("darkred", "darkgreen"))
+points(c(1, 2), c(mean(automatic), mean(manual)), 
+       pch = 19, col = "blue", cex = 2)
+legend("bottomright", legend = "Mean", pch = 19, col = "blue", cex = 1.2)
+```
+
+### 5.2.4 Example 3: Paired t-test
+
+**Research Question:** Does a new teaching method improve test scores?
+
+**Hypotheses:**
+- H₀: μ_difference = 0 (no change in scores)
+- H₁: μ_difference > 0 (scores increased) [one-tailed]
+
+```{r paired-ttest}
+# Paired t-test
+# Create example data: before and after scores
+set.seed(seeds[3])
+
+n_students <- 25
+before_scores <- rnorm(n_students, mean = 70, sd = 10)
+# Add improvement effect
+improvement <- rnorm(n_students, mean = 5, sd = 8)
+after_scores <- before_scores + improvement
+
+student_data <- data.frame(
+  Student = 1:n_students,
+  Before = round(before_scores, 1),
+  After = round(after_scores, 1),
+  Difference = round(after_scores - before_scores, 1)
+)
+
+cat("=== PAIRED T-TEST (BEFORE-AFTER DESIGN) ===\n\n")
+cat("Research Question: Did the new teaching method improve test scores?\n\n")
+cat("H₀: μ_difference = 0 (no improvement)\n")
+cat("H₁: μ_difference > 0 (scores improved) [one-tailed]\n\n")
+
+# Show first few students
+cat("Sample Data (first 6 students):\n")
+head(student_data) %>%
+  kable() %>%
+  kable_styling(bootstrap_options = c("striped", "hover"))
+
+# Perform paired t-test (one-tailed)
+result_paired <- t.test(student_data$After, student_data$Before, 
+                        paired = TRUE, 
+                        alternative = "greater")
+
+cat("\n")
+print(result_paired)
+
+cat("\n=== DESCRIPTIVE STATISTICS ===\n")
+cat("Before: Mean =", round(mean(student_data$Before), 2), 
+    ", SD =", round(sd(student_data$Before), 2), "\n")
+cat("After:  Mean =", round(mean(student_data$After), 2), 
+    ", SD =", round(sd(student_data$After), 2), "\n")
+cat("Mean Difference:", round(mean(student_data$Difference), 2), "points\n\n")
+
+cat("=== INTERPRETATION ===\n")
+cat("t-statistic:", round(result_paired$statistic, 3), "\n")
+cat("p-value (one-tailed):", format.pval(result_paired$p.value, digits = 4), "\n\n")
+
+if(result_paired$p.value < 0.05) {
+  cat("Decision: REJECT H₀ (p < 0.05)\n")
+  cat("Conclusion: The teaching method significantly improved test scores.\n")
+} else {
+  cat("Decision: FAIL TO REJECT H₀ (p ≥ 0.05)\n")
+  cat("Conclusion: No significant evidence of improvement.\n")
+}
+
+# Visualize
+par(mfrow = c(1, 2))
+
+# Box plot comparison
+boxplot(student_data$Before, student_data$After,
+        names = c("Before", "After"),
+        main = "Score Comparison",
+        ylab = "Test Score",
+        col = c("lightcoral", "lightgreen"))
+
+# Difference histogram
+hist(student_data$Difference,
+     main = "Score Changes",
+     xlab = "Difference (After - Before)",
+     col = "lightblue",
+     border = "white")
+abline(v = 0, col = "red", lwd = 3, lty = 2)
+abline(v = mean(student_data$Difference), col = "blue", lwd = 3)
+legend("topright", 
+       legend = c("No Change", "Mean Change"),
+       col = c("red", "blue"), 
+       lty = c(2, 1), 
+       lwd = 3)
+
+par(mfrow = c(1, 1))
+```
+
+## 5.3 Other Common Tests
+
+### 5.3.1 Chi-Square Test (Categorical Data)
+
+**Research Question:** Is there a relationship between transmission type and number of cylinders?
+
+```{r chi-square-test}
+# Chi-square test for independence
+cat("=== CHI-SQUARE TEST OF INDEPENDENCE ===\n\n")
+cat("Research Question: Are transmission type and cylinder count independent?\n\n")
+cat("H₀: Transmission and cylinders are independent (no relationship)\n")
+cat("H₁: Transmission and cylinders are related\n\n")
+
+# Create contingency table
+contingency_table <- table(mtcars$am, mtcars$cyl)
+rownames(contingency_table) <- c("Automatic", "Manual")
+colnames(contingency_table) <- paste(c(4, 6, 8), "cyl")
+
+cat("Contingency Table:\n")
+print(contingency_table)
+
+# Perform chi-square test
+result_chisq <- chisq.test(contingency_table)
+cat("\n")
+print(result_chisq)
+
+cat("\n=== INTERPRETATION ===\n")
+cat("Chi-square statistic:", round(result_chisq$statistic, 3), "\n")
+cat("p-value:", format.pval(result_chisq$p.value, digits = 4), "\n\n")
+
+if(result_chisq$p.value < 0.05) {
+  cat("Decision: REJECT H₀ (p < 0.05)\n")
+  cat("Conclusion: There is a significant relationship between transmission and cylinders.\n")
+} else {
+  cat("Decision: FAIL TO REJECT H₀ (p ≥ 0.05)\n")
+  cat("Conclusion: No significant relationship detected.\n")
+}
+
+# Visualize
+barplot(contingency_table, 
+        beside = TRUE,
+        legend = TRUE,
+        main = "Transmission Type by Cylinder Count",
+        xlab = "Number of Cylinders",
+        ylab = "Frequency",
+        col = c("lightcoral", "lightgreen"))
+```
+
+### 5.3.2 Correlation Test
+
+**Research Question:** Is there a linear relationship between car weight and fuel efficiency?
+
+```{r correlation-test}
+# Correlation test
+cat("=== CORRELATION TEST ===\n\n")
+cat("Research Question: Is there a correlation between weight and MPG?\n\n")
+cat("H₀: ρ = 0 (no correlation)\n")
+cat("H₁: ρ ≠ 0 (correlation exists)\n\n")
+
+# Perform correlation test
+result_cor <- cor.test(mtcars$wt, mtcars$mpg)
+
+print(result_cor)
+
+cat("\n=== INTERPRETATION ===\n")
+cat("Correlation coefficient (r):", round(result_cor$estimate, 3), "\n")
+cat("t-statistic:", round(result_cor$statistic, 3), "\n")
+cat("p-value:", format.pval(result_cor$p.value, digits = 4), "\n\n")
+
+if(result_cor$p.value < 0.05) {
+  cat("Decision: REJECT H₀ (p < 0.05)\n")
+  cat("Conclusion: There is a significant", 
+      ifelse(result_cor$estimate < 0, "NEGATIVE", "POSITIVE"),
+      "correlation.\n")
+  cat("Interpretation:", abs(round(result_cor$estimate, 3)), 
+      "indicates a",
+      ifelse(abs(result_cor$estimate) > 0.7, "strong",
+             ifelse(abs(result_cor$estimate) > 0.4, "moderate", "weak")),
+      "relationship.\n")
+} else {
+  cat("Decision: FAIL TO REJECT H₀ (p ≥ 0.05)\n")
+  cat("Conclusion: No significant correlation detected.\n")
+}
+
+# Visualize
+plot(mtcars$wt, mtcars$mpg,
+     main = paste("Weight vs MPG (r =", round(result_cor$estimate, 3), ")"),
+     xlab = "Weight (1000 lbs)",
+     ylab = "Miles per Gallon",
+     pch = 19,
+     col = "steelblue")
+abline(lm(mpg ~ wt, data = mtcars), col = "red", lwd = 2)
+```
+
+## 5.4 Effect Size and Power
+
+### 5.4.1 Understanding Effect Size
+
+**Effect size** measures the magnitude of a difference or relationship, independent of sample size.
+
+Field et al. (2012, ch. 11) argue that reporting effect sizes alongside p-values answers "How big is the effect?" and prevents us from celebrating trivial differences that become significant only because of large samples.
+
+**Common Effect Size Measures:**
+- **Cohen's d**: For t-tests (small: 0.2, medium: 0.5, large: 0.8)
+- **r**: For correlations (small: 0.1, medium: 0.3, large: 0.5)
+- **η² (eta-squared)**: For ANOVA
+
+```{r effect-size}
+# Calculate Cohen's d for transmission comparison
+# Install effsize if needed
+if (!require("effsize", quietly = TRUE)) {
+  install.packages("effsize", repos = "https://cran.r-project.org")
+  library(effsize)
+}
+
+cat("=== EFFECT SIZE ANALYSIS ===\n\n")
+
+# Cohen's d for transmission effect on MPG
+cohens_d <- cohen.d(mtcars$mpg ~ factor(mtcars$am))
+print(cohens_d)
+
+cat("\n=== INTERPRETATION ===\n")
+cat("Cohen's d:", round(cohens_d$estimate, 3), "\n")
+cat("Magnitude:", cohens_d$magnitude, "\n\n")
+
+cat("Effect Size Guidelines (Cohen, 1988):\n")
+cat("  Small:  d = 0.2\n")
+cat("  Medium: d = 0.5\n")
+cat("  Large:  d = 0.8\n\n")
+
+cat("Practical Significance:\n")
+if(abs(cohens_d$estimate) < 0.2) {
+  cat("The effect is negligible - may not be practically important.\n")
+} else if(abs(cohens_d$estimate) < 0.5) {
+  cat("The effect is small - some practical importance.\n")
+} else if(abs(cohens_d$estimate) < 0.8) {
+  cat("The effect is medium - likely practically important.\n")
+} else {
+  cat("The effect is large - very practically important.\n")
+}
+```
+
+## 5.5 Summary of Hypothesis Testing
+
+```{r hypothesis-summary, echo=FALSE}
+test_summary <- data.frame(
+  Test = c("One-Sample t-test", "Independent t-test", "Paired t-test", 
+           "Chi-Square Test", "Correlation Test", "ANOVA"),
+  Purpose = c(
+    "Compare sample mean to known value",
+    "Compare means of two independent groups",
+    "Compare means of paired/related observations",
+    "Test relationship between categorical variables",
+    "Test linear relationship between continuous variables",
+    "Compare means of 3+ groups"
+  ),
+  Data_Type = c(
+    "Continuous", "Continuous", "Continuous",
+    "Categorical", "Continuous", "Continuous"
+  ),
+  R_Function = c(
+    "t.test(x, mu=value)",
+    "t.test(x, y)",
+    "t.test(x, y, paired=TRUE)",
+    "chisq.test(table)",
+    "cor.test(x, y)",
+    "aov() or anova()"
+  )
+)
+
+test_summary %>%
+  kable(caption = "Common Hypothesis Tests in R") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed")) %>%
+  column_spec(1, bold = TRUE) %>%
+  column_spec(4, monospace = TRUE)
+```
+
+### 5.5.1 Key Reminders
+
+1. **Always state your hypotheses** before looking at the data
+2. **Check assumptions** before running tests (normality, equal variances, etc.)
+3. **Report effect sizes** alongside p-values
+4. **Consider practical significance** not just statistical significance
+5. **Be cautious with multiple testing** - adjust α if doing many tests
+6. **Never say "prove"** - we reject or fail to reject H₀
+
+---
+
+# Part 6: Practical Applications
+
+## 6.1 Case Study 1: Air Quality Analysis
+
+```{r airquality-analysis}
+# Load and explore air quality data
+data(airquality)
+
+cat("=== AIR QUALITY DATASET ===\n")
+cat("Dimensions:", dim(airquality), "\n")
+cat("Variables:", names(airquality), "\n\n")
+
+# Summary statistics
+airquality %>%
+  summary()
+
+# Handle missing values
+cat("\nMissing values by variable:\n")
+colSums(is.na(airquality))
+
+# Visualize relationships
+ggplot(airquality, aes(x = Temp, y = Ozone)) +
+  geom_point(aes(color = Month), alpha = 0.6, size = 3) +
+  geom_smooth(method = "lm", se = TRUE, color = "red") +
+  labs(
+    title = "Ozone Levels vs Temperature",
+    subtitle = "New York Air Quality Measurements (1973)",
+    x = "Temperature (°F)",
+    y = "Ozone (ppb)"
+  ) +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5, face = "bold"))
+```
+
+## 6.2 Case Study 2: Motor Trends Analysis
+
+```{r mtcars-analysis}
+# Motor cars dataset
+data(mtcars)
+
+cat("=== MOTOR TRENDS ANALYSIS ===\n\n")
+
+# Descriptive statistics by transmission type
+mtcars_summary <- mtcars %>%
+  mutate(Transmission = factor(am, labels = c("Automatic", "Manual"))) %>%
+  group_by(Transmission) %>%
+  summarise(
+    N = n(),
+    Mean_MPG = mean(mpg),
+    SD_MPG = sd(mpg),
+    Mean_HP = mean(hp),
+    SD_HP = sd(hp),
+    Mean_Weight = mean(wt)
+  ) %>%
+  mutate(across(where(is.numeric), ~round(., 2)))
+
+mtcars_summary %>%
+  kable(caption = "Car Performance by Transmission Type") %>%
+  kable_styling(bootstrap_options = c("striped", "hover"))
+
+# Visualize MPG distribution
+ggplot(mtcars, aes(x = factor(am, labels = c("Automatic", "Manual")), y = mpg)) +
+  geom_boxplot(aes(fill = factor(am)), alpha = 0.7) +
+  geom_jitter(width = 0.2, alpha = 0.5) +
+  labs(
+    title = "Fuel Efficiency by Transmission Type",
+    x = "Transmission",
+    y = "Miles per Gallon (MPG)"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, face = "bold"),
+    legend.position = "none"
+  ) +
+  scale_fill_brewer(palette = "Set2")
+```
+
+## 6.3 Case Study 3: Population vs Sample
+
+```{r population-sample}
+# Demonstrate population vs sample concepts
+# Use seedhash for reproducible sampling
+set.seed(seeds[2])  # Use second seed from our generator
+
+# Population: All iris flowers
+population_mean <- mean(iris$Sepal.Length)
+population_sd <- sd(iris$Sepal.Length)
+
+cat("=== POPULATION STATISTICS ===\n")
+cat("Population Size:", nrow(iris), "\n")
+cat("Population Mean:", round(population_mean, 3), "\n")
+cat("Population SD:", round(population_sd, 3), "\n\n")
+
+# Take multiple samples
+sample_sizes <- c(10, 30, 50)
+sample_results <- list()
+
+for(n in sample_sizes) {
+  sample_means <- replicate(1000, mean(sample(iris$Sepal.Length, n)))
+  sample_results[[as.character(n)]] <- data.frame(
+    Sample_Size = n,
+    Mean_of_Means = mean(sample_means),
+    SD_of_Means = sd(sample_means),
+    Min = min(sample_means),
+    Max = max(sample_means)
+  )
+}
+
+sample_comparison <- bind_rows(sample_results) %>%
+  mutate(across(where(is.numeric) & !Sample_Size, ~round(., 4)))
+
+cat("=== SAMPLING DISTRIBUTION ===\n")
+cat("Based on 1000 samples for each size\n\n")
+
+sample_comparison %>%
+  kable(caption = "Effect of Sample Size on Sampling Distribution") %>%
+  kable_styling(bootstrap_options = c("striped", "hover"))
+
+# Visualize sampling distributions
+par(mfrow = c(1, 3))
+for(n in sample_sizes) {
+  sample_means <- replicate(1000, mean(sample(iris$Sepal.Length, n)))
+  hist(sample_means,
+       main = paste("Sample Size =", n),
+       xlab = "Sample Mean",
+       col = "lightblue",
+       border = "white",
+       xlim = c(5.5, 6.5))
+  abline(v = population_mean, col = "red", lwd = 3, lty = 2)
+}
+par(mfrow = c(1, 1))
+```
+
+---
+
+# Part 7: Summary and Best Practices
+
+## 7.1 Key Takeaways
+
+### 1. Data Types Matter
+
+- **Categorical**: Nominal, Ordinal, Binary
+- **Continuous**: Interval, Ratio
+- Choose appropriate statistics and visualizations for each type
+
+### 2. Descriptive Statistics
+
+**Central Tendency:**
+- Mean: Average (sensitive to outliers)
+- Median: Middle value (robust to outliers)
+- Mode: Most frequent value
+
+**Dispersion:**
+- Range: Max - Min (sensitive to extremes)
+- IQR: Q3 - Q1 (robust measure)
+- Standard Deviation: Average deviation from mean
+
+### 3. Visualization Principles
+
+- Always visualize your data before analysis
+- Use appropriate plot types for your data
+- Check for outliers and unusual patterns
+- Verify assumptions (normality, linearity, etc.)
+
+### 4. Statistical Modeling
+
+- Start simple, add complexity as needed
+- Check model assumptions and diagnostics
+- Compare model performance metrics
+- Validate predictions on new data
+
+## 7.2 R Code Cheat Sheet
+
+```{r cheatsheet, eval=FALSE}
+# ===== DATA EXPLORATION =====
+# Load data
+data(dataset_name)
+head(df)              # First 6 rows
+tail(df)              # Last 6 rows
+str(df)               # Structure
+summary(df)           # Summary statistics
+dim(df)               # Dimensions
+names(df)             # Variable names
+
+# ===== DESCRIPTIVE STATISTICS =====
+mean(x)               # Mean
+median(x)             # Median
+sd(x)                 # Standard deviation
+var(x)                # Variance
+range(x)              # Range
+IQR(x)                # Interquartile range
+quantile(x)           # Quartiles
+table(x)              # Frequency table
+
+# ===== VISUALIZATION =====
+hist(x)               # Histogram
+boxplot(x)            # Boxplot
+plot(x, y)            # Scatterplot
+barplot(table(x))     # Bar plot
+pairs(df)             # Scatterplot matrix
+
+# ===== TIDYVERSE =====
+df %>%
+  filter(condition) %>%       # Filter rows
+  select(var1, var2) %>%      # Select columns
+  mutate(new_var = ...) %>%   # Create new variables
+  group_by(category) %>%      # Group data
+  summarise(mean = mean(x))   # Summarize
+
+# ===== MODELING =====
+model <- lm(y ~ x, data = df)     # Linear regression
+summary(model)                     # Model summary
+predict(model, newdata = new_df)  # Predictions
+plot(model)                        # Diagnostic plots
+
+# ===== TESTING =====
+t.test(x, y)          # T-test
+cor.test(x, y)        # Correlation test
+chisq.test(x, y)      # Chi-square test
+shapiro.test(x)       # Normality test
+```
+
+## 7.3 Common Mistakes to Avoid
+
+```{r common-mistakes, eval=FALSE}
+# ❌ BAD: Not checking for missing values
+mean(data$variable)
+
+# ✅ GOOD: Handle missing values
+mean(data$variable, na.rm = TRUE)
+
+# ❌ BAD: Assuming normality without checking
+t.test(group1, group2)
+
+# ✅ GOOD: Check normality first
+shapiro.test(group1)
+hist(group1)
+# Then decide on appropriate test
+
+# ❌ BAD: Not setting seed for reproducibility
+sample(data, 10)
+
+# ✅ GOOD: Set seed for reproducible results
+set.seed(123)
+sample(data, 10)
+
+# ✅ BEST: Use seedhash for reproducible, named seeds
+library(seedhash)
+gen <- SeedHashGenerator$new("YourName")
+seeds <- gen$generate_seeds(5)
+set.seed(seeds[1])
+sample(data, 10)
+
+# ❌ BAD: Ignoring assumptions
+model <- lm(y ~ x)
+# Use model without checking
+
+# ✅ GOOD: Check assumptions
+model <- lm(y ~ x)
+plot(model)  # Check diagnostic plots
+```
+
+## 7.4 Additional Resources
+
+### 7.4.1 Recommended Packages
+
+```{r resources, eval=FALSE}
+# Data Manipulation
+install.packages("dplyr")        # Data wrangling
+install.packages("tidyr")        # Data tidying
+install.packages("data.table")   # Fast data manipulation
+
+# Visualization
+install.packages("ggplot2")      # Advanced plotting
+install.packages("plotly")       # Interactive plots
+install.packages("ggpubr")       # Publication-ready plots
+
+# Statistics
+install.packages("moments")      # Skewness & kurtosis
+install.packages("car")          # Regression diagnostics
+install.packages("psych")        # Psychological statistics
+
+# Reproducibility
+install.packages("seedhash")     # Reproducible seed generation
+
+# Tables
+install.packages("knitr")        # Basic tables
+install.packages("kableExtra")   # Enhanced tables
+install.packages("gt")           # Grammar of tables
+```
+
+### 7.4.2 Learning Resources
+
+- **R Documentation**: `?function_name` or `help(function_name)`
+- **RStudio Cheatsheets**: https://www.rstudio.com/resources/cheatsheets/
+- **R for Data Science**: https://r4ds.had.co.nz/
+- **Quick-R**: https://www.statmethods.net/
+- **Stack Overflow**: https://stackoverflow.com/questions/tagged/r
+
+### 7.4.3 Getting Help
+
+```{r getting-help, eval=FALSE}
+# View function documentation
+?mean
+help(lm)
+
+# Search for functions
+??regression
+
+# View examples
+example(plot)
+
+# Check package vignettes
+browseVignettes("dplyr")
+```
+
+---
+
+# References
+
+- Field, A., Miles, J., & Field, Z. (2012). *Discovering Statistics Using R*. Sage.
+
+---
+
+# Practice Exercises
+
+## Exercise 1: Descriptive Statistics
+
+Using the `mtcars` dataset:
+
+1. Calculate mean, median, and standard deviation of `mpg`
+2. Create a frequency table of `cyl` (number of cylinders)
+3. Calculate the IQR of `hp` (horsepower)
+4. Identify any outliers in `wt` (weight)
+
+```{r exercise1, eval=FALSE}
+# Your code here
+```
+
+## Exercise 2: Visualization
+
+1. Create a histogram of `mpg` with appropriate labels
+2. Make a boxplot comparing `mpg` across different `cyl` values
+3. Create a scatterplot of `wt` vs `mpg` with a regression line
+
+```{r exercise2, eval=FALSE}
+# Your code here
+```
+
+## Exercise 3: Simple Analysis
+
+1. Test if there's a relationship between `hp` and `mpg`
+2. Build a linear model predicting `mpg` from `wt`
+3. Interpret the model coefficients and R-squared value
+
+```{r exercise3, eval=FALSE}
+# Your code here
+```
+
+---
+
+# Session Information
+
+```{r session-info}
+sessionInfo()
+```
+
+---
+
+<div style="text-align: center; padding: 20px; background-color: #f0f0f0; border-radius: 10px; margin-top: 30px;">
+**End of Week 02: R for Data Analytics Tutorial**
+
+*ANLY 500 - Analytics I*
+
+*Harrisburg University*
+</div>

@@ -1,0 +1,1327 @@
+---
+title: "Week 04: R for Data Analytics (Statistical Inference and Effect Sizes)"
+author: "Ziyuan Huang"
+date: "Last Updated: `r format(Sys.Date(), '%B %d, %Y')`"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    toc_depth: 3
+    theme: cosmo
+    highlight: tango
+    code_folding: show
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+ echo = TRUE,
+ warning = FALSE,
+ message = FALSE,
+ fig.align = 'center',
+ fig.width = 8,
+ fig.height = 5
+)
+
+# Reproducible seeds using seedhash (same pattern as Weeks 02-03)
+library(seedhash)
+gen <- SeedHashGenerator$new("Week04 Statistical Inference - ANLY500")
+seeds <- gen$generate_seeds(10)
+set.seed(seeds[1])
+
+cat("MD5 Hash:", gen$get_hash(), "\n")
+cat("Using seed:", seeds[1], "\n")
+```
+
+# Introduction
+
+## 1. Overview
+
+This Week 04 tutorial builds on Weeks 02-03 and focuses on **statistical inference** and **effect sizes** in R. This tutorial upgrades the lecture concepts from `04_introDA_3.rmd` into hands-on, code-first workflows:
+
+- The fundamental equation: Outcome = Model + Error
+- Measuring model fit: Sum of Squares, Variance, Standard Deviation
+- Degrees of freedom and why we use N-1
+- Standard Error vs. Standard Deviation
+- Confidence Intervals construction and interpretation
+- Null Hypothesis Significance Testing (NHST)
+- Type I and Type II errors, and statistical power
+- Effect sizes: Cohen's d, Pearson's r, and practical significance
+
+> **Reference:** This tutorial draws heavily from Field, Miles, and Field [1], *Discovering Statistics Using R*, with IEEE-style citations throughout.
+
+> **Upgrade note:** This hands-on tutorial extends the Week 04 lecture slides in `04_introDA_3.rmd` with code-first workflows and beginner-friendly explanations.
+
+### For Beginners: Quick Start
+
+- **How to run code:**
+ - RStudio: place cursor in a chunk, press Ctrl+Enter (Cmd+Enter on Mac) to run; use Knit to render the full document.
+ - VS Code: highlight lines and press Ctrl+Enter, or click the Run button above a chunk.
+- **Installing packages:** if you see "there is no package called 'X'", run `install.packages("X")` once, then `library(X)`.
+- **If stuck:** restart R (RStudio: Session → Restart R), then re-run chunks from the top (setup first).
+- **Reading errors:** focus on the last lines of the message; they usually state the actual problem (e.g., object not found, package missing, misspelled column).
+
+## 2. Learning Objectives
+
+By the end of this tutorial, you will be able to:
+
+1. Understand the fundamental statistical equation: Outcome = Model + Error
+2. Calculate and interpret Sum of Squares, Variance, and Standard Deviation
+3. Distinguish between Standard Error and Standard Deviation
+4. Construct and interpret confidence intervals
+5. Conduct hypothesis tests and interpret p-values correctly
+6. Calculate and interpret effect sizes (Cohen's d, Pearson's r)
+7. Understand statistical power and its relationship to sample size
+
+## 3. Required Packages
+
+```{r load-packages}
+# Install if needed
+# install.packages(c("tidyverse", "psych", "effectsize", "pwr", "MOTE", "kableExtra", "moments"))
+
+library(tidyverse)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(psych)
+library(knitr)
+library(kableExtra)
+library(moments)
+
+# Optional packages for effect sizes and power
+if (requireNamespace("effectsize", quietly = TRUE)) library(effectsize)
+if (requireNamespace("pwr", quietly = TRUE)) library(pwr)
+if (requireNamespace("MOTE", quietly = TRUE)) library(MOTE)
+
+cat("\n=== REPRODUCIBLE SEED INFORMATION ===")
+cat("\nGenerator Name: Week04 Statistical Inference - ANLY500")
+cat("\nMD5 Hash:", gen$get_hash())
+cat("\nAvailable Seeds:", paste(seeds[1:5], collapse = ", "), "...\n\n")
+```
+
+---
+
+# Part 1: The Fundamental Equation of Statistics
+
+## 1.1 Outcome = Model + Error
+
+**What is this equation?** Field et al. [1, Ch. 2] explain that everything in statistics essentially boils down to one simple idea:
+
+$$Outcome_i = Model + Error_i$$
+
+**In plain English:** The data we observe can be predicted from:
+1. A **model** we choose to fit (e.g., the mean, a regression line)
+2. Some amount of **error** (the difference between what we predicted and what we actually observed)
+
+**Why does this matter?** Every statistical technique—from simple averages to complex machine learning—follows this pattern. Understanding it helps you see the unity across all of statistics.
+
+### 1.1.1 The Mean as a Simple Model
+
+The simplest statistical model is the **mean** (average). It's a single number that tries to represent an entire dataset [1, Ch. 2].
+
+**Example from Field et al. [1]:** Consider 5 statistics lecturers and their number of friends: 1, 2, 3, 3, 4
+
+```{r mean-as-model}
+# The lecturer friends example from Field et al. [1]
+lecturer_friends <- c(1, 2, 3, 3, 4)
+
+# Calculate the mean
+mean_friends <- mean(lecturer_friends)
+cat("Mean number of friends:", mean_friends, "\n")
+
+# The mean (2.6) is our MODEL
+# But 2.6 friends is impossible - it's a HYPOTHETICAL value!
+```
+
+**Key insight [1, Ch. 2]:** The mean of 2.6 friends is impossible in reality (you can't have 0.6 of a friend!). This illustrates that the mean is a **model**—a hypothetical value created to summarize our data, not an actual observation.
+
+### 1.1.2 Visualizing the Model and Errors
+
+```{r visualize-model-error, fig.height=4}
+# Create a data frame for visualization
+lecturer_df <- data.frame(
+ lecturer = 1:5,
+ friends = lecturer_friends,
+ model = mean_friends
+)
+
+# Calculate the errors (deviations from the mean)
+lecturer_df$error <- lecturer_df$friends - lecturer_df$model
+
+# Display the data
+lecturer_df %>%
+ kable(caption = "Lecturer Friends: Observed Data, Model (Mean), and Errors",
+       digits = 2) %>%
+ kable_styling(bootstrap_options = c("striped", "hover"), full_width = FALSE)
+
+# Visualize
+ggplot(lecturer_df, aes(x = lecturer, y = friends)) +
+ geom_point(size = 4, color = "steelblue") +
+ geom_hline(yintercept = mean_friends, color = "red", linewidth = 1.5, linetype = "dashed") +
+ geom_segment(aes(xend = lecturer, yend = model), color = "darkgreen", linewidth = 1) +
+ annotate("text", x = 5.3, y = mean_friends, label = paste("Mean =", mean_friends),
+         color = "red", hjust = 0) +
+ labs(title = "The Mean as a Statistical Model",
+      subtitle = "Red line = Model (mean); Green lines = Errors (deviations)",
+      x = "Lecturer", y = "Number of Friends") +
+ theme_minimal() +
+ theme(plot.title = element_text(hjust = 0.5, face = "bold"))
+```
+
+**Interpretation:**
+- The **red dashed line** is our model (the mean = 2.6)
+- The **green vertical lines** show the **errors**—how far each observation is from the model
+- Some errors are positive (above the mean), some are negative (below)
+
+---
+
+# Part 2: Measuring Model Fit (SS, Variance, SD)
+
+## 2.1 Why We Need to Measure Fit
+
+**The problem:** If we just add up all the errors (deviations), they cancel out to zero! [1, Ch. 2]
+
+```{r deviations-cancel}
+# Calculate deviations from the mean
+deviations <- lecturer_friends - mean_friends
+cat("Individual deviations:", deviations, "\n")
+cat("Sum of deviations:", sum(deviations), "\n")
+# The sum is (essentially) zero! Positive and negative cancel out.
+```
+
+**The solution:** Square each deviation before adding them up. Squaring makes all values positive [1, Ch. 2].
+
+## 2.2 Sum of Squared Errors (SS)
+
+**What is SS?** The Sum of Squared Errors (also called Sum of Squares) measures the total amount of error in our model [1, Ch. 2].
+
+$$SS = \sum_{i=1}^{n}(x_i - \bar{x})^2$$
+
+**In plain English:** 
+1. Calculate how far each value is from the mean (deviation)
+2. Square each deviation (removes negatives)
+3. Add them all up
+
+```{r calculate-ss}
+# Step-by-step SS calculation
+deviations <- lecturer_friends - mean_friends
+squared_deviations <- deviations^2
+SS <- sum(squared_deviations)
+
+# Display the calculation
+ss_df <- data.frame(
+ Value = lecturer_friends,
+ Mean = mean_friends,
+ Deviation = deviations,
+ Squared_Deviation = squared_deviations
+)
+
+ss_df %>%
+ kable(caption = "Step-by-Step Sum of Squares Calculation",
+       digits = 2) %>%
+ kable_styling(bootstrap_options = c("striped", "hover"), full_width = FALSE)
+
+cat("\nSum of Squared Errors (SS) =", SS, "\n")
+```
+
+**Interpretation:** The SS of 5.20 tells us there IS error in our model, even though the raw deviations summed to zero.
+
+## 2.3 Variance: The Average Squared Error
+
+**The problem with SS:** It depends on how much data you have. More data points = larger SS, even if the model fits equally well [1, Ch. 2].
+
+**The solution:** Calculate the **average** squared error by dividing SS by the degrees of freedom.
+
+$$Variance (s^2) = \frac{SS}{N-1} = \frac{\sum_{i=1}^{n}(x_i - \bar{x})^2}{N-1}$$
+
+**Why N-1 instead of N?** This is where **degrees of freedom** come in!
+
+### 2.3.1 Degrees of Freedom: The Rugby Team Analogy
+
+**What are degrees of freedom (df)?** Field et al. [1, Ch. 2] use a brilliant analogy:
+
+> *Imagine you're a rugby team manager with 15 empty position slots. When the first player arrives, you have 15 choices for their position. When the second arrives, you have 14 choices. Continue until 14 positions are filled. When the 15th player arrives, you have NO choice—only one position remains!*
+>
+> **Degrees of freedom = 15 - 1 = 14**
+
+**In statistics:** When we use the sample mean to estimate the population mean, we "use up" one degree of freedom. Only N-1 values are free to vary while keeping that mean constant [1, Ch. 2].
+
+```{r calculate-variance}
+# Calculate variance
+n <- length(lecturer_friends)
+df <- n - 1
+variance <- SS / df
+
+cat("Sample size (N):", n, "\n")
+cat("Degrees of freedom (df = N-1):", df, "\n")
+cat("Variance (SS/df):", variance, "\n")
+
+# Verify with R's built-in function
+cat("R's var() function:", var(lecturer_friends), "\n")
+```
+
+**Interpretation:** The variance of 1.3 is in "friends squared" units—which doesn't make intuitive sense!
+
+## 2.4 Standard Deviation: Back to Original Units
+
+**The problem with variance:** It's in squared units (friends², dollars², etc.)—hard to interpret [1, Ch. 2].
+
+**The solution:** Take the square root to get the **Standard Deviation (SD)**.
+
+$$SD = \sqrt{Variance} = \sqrt{\frac{SS}{N-1}}$$
+
+```{r calculate-sd}
+# Calculate standard deviation
+std_dev <- sqrt(variance)
+
+cat("Standard Deviation:", round(std_dev, 2), "friends\n")
+cat("R's sd() function:", round(sd(lecturer_friends), 2), "\n")
+```
+
+**Interpretation:** On average, the number of friends deviates from the mean by about **1.14 friends**. This is now in interpretable units!
+
+### 2.4.1 What SD Tells Us About Model Fit
+
+According to Field et al. [1, Ch. 2]:
+
+- **Small SD (relative to mean)** = Good model fit—data points cluster close to the mean
+- **Large SD (relative to mean)** = Poor model fit—data points are spread far from the mean
+- **SD = 0** would mean all scores are identical
+
+```{r sd-interpretation, fig.height=5}
+# Compare two distributions with same mean but different SDs
+set.seed(seeds[2])
+
+# Consistent lecturer (small SD)
+consistent <- rnorm(100, mean = 3, sd = 0.5)
+
+# Variable lecturer (large SD)
+variable <- rnorm(100, mean = 3, sd = 1.5)
+
+# Create comparison data
+comparison_df <- data.frame(
+ Rating = c(consistent, variable),
+ Lecturer = rep(c("Consistent (SD = 0.5)", "Variable (SD = 1.5)"), each = 100)
+)
+
+# Visualize
+ggplot(comparison_df, aes(x = Rating, fill = Lecturer)) +
+ geom_histogram(bins = 20, alpha = 0.7, position = "identity") +
+ geom_vline(xintercept = 3, color = "red", linewidth = 1.5, linetype = "dashed") +
+ facet_wrap(~Lecturer, ncol = 1) +
+ labs(title = "Same Mean, Different Standard Deviations",
+      subtitle = "The mean (red line) represents both datasets equally, but with different accuracy",
+      x = "Rating", y = "Frequency") +
+ theme_minimal() +
+ theme(legend.position = "none",
+       plot.title = element_text(hjust = 0.5, face = "bold"))
+```
+
+**Key insight [1, Ch. 2]:** Both distributions have the same mean (3.0), but the consistent lecturer's ratings cluster tightly around it (small SD), while the variable lecturer's ratings are spread out (large SD). The mean is a better model for the consistent lecturer!
+
+## 2.5 Practical Application: The Apply Family
+
+Let's apply these concepts to real data using R's `apply` family of functions and modern tidyverse approaches.
+
+```{r apply-family}
+# Using the built-in quakes dataset
+data(quakes)
+
+# Traditional apply approach
+cat("=== Using apply() ===\n")
+round(apply(quakes, 2, mean), 2)
+
+# lapply returns a list
+cat("\n=== Using lapply() ===\n")
+lapply(quakes[, c("mag", "depth")], function(x) c(mean = mean(x), sd = sd(x)))
+
+# sapply simplifies to a vector/matrix
+cat("\n=== Using sapply() ===\n")
+round(sapply(quakes, mean), 2)
+
+# tapply for grouped operations
+cat("\n=== Using tapply() - Mean magnitude by station count ===\n")
+head(tapply(quakes$mag, quakes$stations, mean), 10)
+```
+
+### 2.5.1 Modern Alternative: dplyr
+
+The tidyverse provides more readable alternatives [1, Ch. 3]:
+
+```{r dplyr-alternative}
+# Same calculations using tidyverse (more readable)
+quakes_summary <- quakes %>%
+ summarise(across(everything(),
+   list(mean = mean, sd = sd, var = var),
+   .names = "{.col}_{.fn}")) %>%
+ pivot_longer(everything(),
+              names_to = c("variable", "statistic"),
+              names_sep = "_") %>%
+ pivot_wider(names_from = statistic, values_from = value) %>%
+ mutate(across(where(is.numeric), ~round(.x, 2)))
+
+quakes_summary %>%
+ kable(caption = "Quakes Dataset: Descriptive Statistics") %>%
+ kable_styling(bootstrap_options = c("striped", "hover"), full_width = FALSE)
+```
+
+---
+
+# Part 3: Standard Error and Sampling Distributions
+
+## 3.1 The Key Distinction: SD vs. SE
+
+This is one of the most commonly confused concepts in statistics! Field et al. [1, Ch. 2] clarify:
+
+| Concept | Measures | Question It Answers |
+|---------|----------|---------------------|
+| **Standard Deviation (SD)** | Spread of individual scores around the sample mean | "How much do individual data points vary?" |
+| **Standard Error (SE)** | Spread of sample means around the population mean | "How much would the sample mean vary if we took many samples?" |
+
+### 3.1.1 Why We Need Standard Error
+
+**The problem:** We usually can't access the entire population. We only have a sample [1, Ch. 2].
+
+**The insight:** If we took many samples from the same population, each sample would have a slightly different mean (this is called **sampling variation**).
+
+**The solution:** The Standard Error tells us how much those sample means would typically vary.
+
+$$SE = \frac{s}{\sqrt{N}}$$
+
+Where:
+- *s* = sample standard deviation
+- *N* = sample size
+
+```{r calculate-se}
+# Calculate SE for quakes magnitude
+mag_mean <- mean(quakes$mag)
+mag_sd <- sd(quakes$mag)
+mag_n <- length(quakes$mag)
+mag_se <- mag_sd / sqrt(mag_n)
+
+cat("Sample Mean:", round(mag_mean, 3), "\n")
+cat("Sample SD:", round(mag_sd, 3), "\n")
+cat("Sample Size:", mag_n, "\n")
+cat("Standard Error:", round(mag_se, 4), "\n")
+
+# Using psych::describe for comprehensive output
+psych::describe(quakes$mag)
+```
+
+### 3.1.2 Interpreting Standard Error
+
+According to Field et al. [1, Ch. 2]:
+
+- **Large SE** (relative to mean) = lots of variability between sample means → our sample might not be representative
+- **Small SE** = most sample means are similar → our sample is likely a good estimate of the population
+
+**Key insight:** SE gets smaller as sample size increases! This is why larger samples give more precise estimates.
+
+```{r se-sample-size, fig.height=5}
+# Demonstrate how SE decreases with sample size
+set.seed(seeds[3])
+population <- rnorm(10000, mean = 50, sd = 10)
+
+sample_sizes <- c(10, 30, 50, 100, 500, 1000)
+se_by_n <- sapply(sample_sizes, function(n) {
+ sample_data <- sample(population, n)
+ sd(sample_data) / sqrt(n)
+})
+
+se_df <- data.frame(
+ Sample_Size = sample_sizes,
+ Standard_Error = round(se_by_n, 3)
+)
+
+se_df %>%
+ kable(caption = "Standard Error Decreases with Sample Size") %>%
+ kable_styling(bootstrap_options = c("striped", "hover"), full_width = FALSE)
+
+# Visualize
+ggplot(se_df, aes(x = Sample_Size, y = Standard_Error)) +
+ geom_line(color = "steelblue", linewidth = 1.5) +
+ geom_point(size = 3, color = "darkblue") +
+ labs(title = "Standard Error Decreases with Sample Size",
+      subtitle = "Larger samples provide more precise estimates of the population mean",
+      x = "Sample Size (N)", y = "Standard Error") +
+ theme_minimal() +
+ theme(plot.title = element_text(hjust = 0.5, face = "bold"))
+```
+
+## 3.2 The Sampling Distribution and Central Limit Theorem
+
+**What is a sampling distribution?** It's the distribution of sample means from many samples of the same population [1, Ch. 2].
+
+**The Central Limit Theorem (CLT)** states [1, Ch. 2]:
+1. As sample size increases (N > 30), the sampling distribution approaches a **normal distribution**
+2. The mean of the sampling distribution equals the **population mean (μ)**
+3. The SD of the sampling distribution equals **σ/√N** (the standard error)
+
+```{r sampling-distribution, fig.height=6}
+# Demonstrate the Central Limit Theorem
+set.seed(seeds[4])
+
+# Population (skewed - NOT normal)
+population <- rexp(100000, rate = 0.5)  # Exponential distribution
+pop_mean <- mean(population)
+
+# Take many samples of different sizes and calculate means
+simulate_sampling <- function(n, n_samples = 1000) {
+ sample_means <- replicate(n_samples, mean(sample(population, n)))
+ return(sample_means)
+}
+
+samples_10 <- simulate_sampling(10)
+samples_30 <- simulate_sampling(30)
+samples_100 <- simulate_sampling(100)
+
+# Create visualization data
+sampling_df <- data.frame(
+ Mean = c(samples_10, samples_30, samples_100),
+ Sample_Size = factor(rep(c("N = 10", "N = 30", "N = 100"), each = 1000),
+                      levels = c("N = 10", "N = 30", "N = 100"))
+)
+
+# Plot
+ggplot(sampling_df, aes(x = Mean)) +
+ geom_histogram(bins = 30, fill = "steelblue", color = "white", alpha = 0.8) +
+ geom_vline(xintercept = pop_mean, color = "red", linewidth = 1.5, linetype = "dashed") +
+ facet_wrap(~Sample_Size, ncol = 1, scales = "free_y") +
+ labs(title = "Central Limit Theorem in Action",
+      subtitle = "Even from a skewed population, sampling distributions become normal with larger N",
+      x = "Sample Mean", y = "Frequency") +
+ theme_minimal() +
+ theme(plot.title = element_text(hjust = 0.5, face = "bold"))
+```
+
+**Key insight:** The original population was heavily skewed (exponential), but the sampling distribution of means becomes more normal as sample size increases!
+
+---
+
+# Part 4: Confidence Intervals
+
+## 4.1 What is a Confidence Interval?
+
+**Definition [1, Ch. 2]:** A confidence interval is a range of values within which we believe the population parameter falls, with a specified probability (usually 95%).
+
+**Common misconception:** A 95% CI does NOT mean "there's a 95% chance the true mean is in this interval." Instead, it means: "If we repeated this study 100 times, about 95 of those CIs would contain the true population mean" [1, Ch. 2].
+
+### 4.1.1 The Japanese Quail Example
+
+Field et al. [1, Ch. 2] use a memorable example:
+- Sample mean sperm release = 17 million
+- True population mean (unknown to researchers) = 15 million
+- Wide interval (12-22 million): Contains true value ✓
+- Narrow interval (16-18 million): Misses true value ✗
+
+**The trade-off:** Narrower CIs are more precise but may miss the true value more often.
+
+## 4.2 Calculating Confidence Intervals
+
+The formula for a 95% CI [1, Ch. 2]:
+
+$$CI_{95\%} = \bar{X} \pm (z \times SE)$$
+
+Where:
+- $\bar{X}$ = sample mean
+- z = 1.96 for 95% CI (from normal distribution)
+- SE = standard error
+
+For small samples (N < 30), use the t-distribution instead of z.
+
+```{r calculate-ci}
+# Calculate 95% CI for quakes magnitude
+mag_mean <- mean(quakes$mag)
+mag_se <- sd(quakes$mag) / sqrt(length(quakes$mag))
+
+# For large samples, z = 1.96 for 95% CI
+z_95 <- 1.96
+ci_lower <- mag_mean - z_95 * mag_se
+ci_upper <- mag_mean + z_95 * mag_se
+
+cat("=== 95% Confidence Interval for Quake Magnitude ===\n")
+cat("Sample Mean:", round(mag_mean, 3), "\n")
+cat("Standard Error:", round(mag_se, 4), "\n")
+cat("95% CI: [", round(ci_lower, 3), ",", round(ci_upper, 3), "]\n")
+cat("\nInterpretation: We are 95% confident that the true population mean\n")
+cat("earthquake magnitude falls between", round(ci_lower, 3), "and", round(ci_upper, 3), "\n")
+```
+
+### 4.2.1 CI for All Variables Using Tidyverse
+
+```{r ci-tidyverse}
+# Calculate CIs for all numeric variables
+quakes_ci <- quakes %>%
+ summarise(across(everything(),
+   list(
+     mean = mean,
+     se = ~sd(.x)/sqrt(length(.x)),
+     ci_lower = ~mean(.x) - 1.96 * sd(.x)/sqrt(length(.x)),
+     ci_upper = ~mean(.x) + 1.96 * sd(.x)/sqrt(length(.x))
+   ),
+   .names = "{.col}_{.fn}")) %>%
+ pivot_longer(everything(),
+              names_to = c("variable", "statistic"),
+              names_sep = "_(?=[^_]+$)") %>%
+ pivot_wider(names_from = statistic, values_from = value) %>%
+ mutate(across(where(is.numeric), ~round(.x, 2)))
+
+quakes_ci %>%
+ kable(caption = "95% Confidence Intervals for Quakes Dataset Variables") %>%
+ kable_styling(bootstrap_options = c("striped", "hover"), full_width = FALSE)
+```
+
+### 4.2.2 Visualizing Confidence Intervals
+
+```{r visualize-ci, fig.height=4}
+# Visualize CIs by region (using mtcars as example)
+data(mtcars)
+
+# Calculate CI for MPG by cylinder count
+mpg_ci <- mtcars %>%
+ group_by(cyl) %>%
+ summarise(
+   n = n(),
+   mean = mean(mpg),
+   sd = sd(mpg),
+   se = sd / sqrt(n),
+   ci_lower = mean - 1.96 * se,
+   ci_upper = mean + 1.96 * se
+ )
+
+mpg_ci %>%
+ kable(caption = "MPG by Cylinder Count with 95% CIs", digits = 2) %>%
+ kable_styling(bootstrap_options = c("striped", "hover"), full_width = FALSE)
+
+# Visualize with error bars
+ggplot(mpg_ci, aes(x = factor(cyl), y = mean)) +
+ geom_col(fill = "steelblue", alpha = 0.7) +
+ geom_errorbar(aes(ymin = ci_lower, ymax = ci_upper),
+               width = 0.2, linewidth = 1) +
+ labs(title = "Mean MPG by Cylinder Count with 95% Confidence Intervals",
+      subtitle = "Non-overlapping CIs suggest significant differences",
+      x = "Number of Cylinders", y = "Miles Per Gallon (MPG)") +
+ theme_minimal() +
+ theme(plot.title = element_text(hjust = 0.5, face = "bold"))
+```
+
+**Interpretation:** When CIs don't overlap, it suggests the groups are significantly different [1, Ch. 2]. Here, 4-cylinder cars have significantly higher MPG than 6- or 8-cylinder cars.
+
+---
+
+# Part 5: Null Hypothesis Significance Testing (NHST)
+
+## 5.1 The Logic of NHST
+
+### 5.1.1 The Lady Tasting Tea
+
+Field et al. [1, Ch. 2] recount Fisher's famous example:
+
+> *A woman claimed she could tell whether milk or tea was added first to a cup. Fisher tested her:*
+> - *With 2 cups: 50% chance of guessing correctly (not convincing!)*
+> - *With 6 cups: Only 5% chance of guessing correctly (1 in 20)*
+> *Only when there's a very small probability of success by chance should we believe it's genuine.*
+
+This is the foundation of significance testing!
+
+### 5.1.2 The Framework
+
+**Null Hypothesis (H₀):** No effect exists; any observed difference is due to chance [1, Ch. 2].
+
+**Alternative Hypothesis (H₁):** An effect does exist; the observed difference is real [1, Ch. 2].
+
+**Decision rules:**
+- If p < 0.05: Reject H₀ → "statistically significant"
+- If p ≥ 0.05: Fail to reject H₀ → "not statistically significant"
+
+**Important [1, Ch. 2]:** We never "accept" the null or "prove" the alternative. We only reject or fail to reject.
+
+### 5.1.3 Why p < .05?
+
+Fisher [2] suggested we should be 95% confident before believing a result is genuine. But Field et al. [1, Ch. 2] note an important historical fact:
+
+> *Fisher himself warned: "No scientific worker has a fixed level of significance at which from year to year, and in all circumstances, he rejects hypotheses; he rather gives his mind to each particular case in the light of his evidence and his ideas."*
+
+The .05 cutoff became popular because Fisher published tables for these specific values—it was **practical, not principled** [1, Ch. 2]!
+
+## 5.2 Conducting Hypothesis Tests in R
+
+### 5.2.1 One-Sample t-Test
+
+**Question:** Is the mean earthquake magnitude different from 4.5?
+
+```{r one-sample-t}
+# One-sample t-test
+# H₀: μ = 4.5 (mean magnitude equals 4.5)
+# H₁: μ ≠ 4.5 (mean magnitude differs from 4.5)
+
+test_value <- 4.5
+one_t <- t.test(quakes$mag, mu = test_value)
+
+cat("=== ONE-SAMPLE T-TEST ===\n")
+cat("H₀: Mean magnitude = ", test_value, "\n")
+cat("H₁: Mean magnitude ≠ ", test_value, "\n\n")
+print(one_t)
+
+# Interpretation
+cat("\n=== INTERPRETATION ===\n")
+cat("Sample mean:", round(mean(quakes$mag), 3), "\n")
+cat("Test statistic (t):", round(one_t$statistic, 3), "\n")
+cat("p-value:", format.pval(one_t$p.value, digits = 4), "\n")
+cat("95% CI: [", round(one_t$conf.int[1], 3), ",", round(one_t$conf.int[2], 3), "]\n\n")
+
+if(one_t$p.value < 0.05) {
+ cat("Decision: REJECT H₀ (p < 0.05)\n")
+ cat("Conclusion: The mean magnitude is significantly different from", test_value, "\n")
+} else {
+ cat("Decision: FAIL TO REJECT H₀ (p ≥ 0.05)\n")
+ cat("Conclusion: Insufficient evidence that the mean differs from", test_value, "\n")
+}
+```
+
+### 5.2.2 Independent Samples t-Test
+
+**Question:** Do manual transmission cars have different fuel efficiency than automatic transmission cars?
+
+```{r independent-t}
+# Prepare data
+automatic <- mtcars$mpg[mtcars$am == 0]
+manual <- mtcars$mpg[mtcars$am == 1]
+
+cat("=== INDEPENDENT SAMPLES T-TEST ===\n")
+cat("H₀: Mean MPG(manual) = Mean MPG(automatic)\n")
+cat("H₁: Mean MPG(manual) ≠ Mean MPG(automatic)\n\n")
+
+# Welch t-test (doesn't assume equal variances) - recommended by Field et al. [1]
+two_t <- t.test(manual, automatic, var.equal = FALSE)
+print(two_t)
+
+# Descriptive statistics
+cat("\n=== DESCRIPTIVE STATISTICS ===\n")
+cat("Automatic: n =", length(automatic), ", Mean =", round(mean(automatic), 2),
+   ", SD =", round(sd(automatic), 2), "\n")
+cat("Manual: n =", length(manual), ", Mean =", round(mean(manual), 2),
+   ", SD =", round(sd(manual), 2), "\n")
+cat("Difference:", round(mean(manual) - mean(automatic), 2), "MPG\n\n")
+
+if(two_t$p.value < 0.05) {
+ cat("Decision: REJECT H₀ (p < 0.05)\n")
+ cat("Conclusion: Manual and automatic transmissions have significantly different MPG.\n")
+} else {
+ cat("Decision: FAIL TO REJECT H₀ (p ≥ 0.05)\n")
+ cat("Conclusion: No significant difference in MPG between transmission types.\n")
+}
+```
+
+### 5.2.3 Visualizing the Comparison
+
+```{r visualize-t-test, fig.height=4}
+# Box plot comparison
+mtcars_plot <- mtcars %>%
+ mutate(Transmission = factor(am, labels = c("Automatic", "Manual")))
+
+ggplot(mtcars_plot, aes(x = Transmission, y = mpg, fill = Transmission)) +
+ geom_boxplot(alpha = 0.7) +
+ geom_jitter(width = 0.1, alpha = 0.5) +
+ stat_summary(fun = mean, geom = "point", shape = 18, size = 4, color = "red") +
+ labs(title = "Fuel Efficiency by Transmission Type",
+      subtitle = paste("Welch t-test: t =", round(two_t$statistic, 2),
+                       ", p =", format.pval(two_t$p.value, digits = 3)),
+      x = "Transmission Type", y = "Miles Per Gallon (MPG)") +
+ theme_minimal() +
+ theme(legend.position = "none",
+       plot.title = element_text(hjust = 0.5, face = "bold"))
+```
+
+## 5.3 Interpreting NHST Results Correctly
+
+Field et al. [1, Ch. 2] emphasize three critical points:
+
+### 5.3.1 Statistical Significance ≠ Practical Importance
+
+> *"Just because a test is significant doesn't mean the effect is important! Very small, unimportant effects can be 'significant' with large samples."* [1, Ch. 2]
+
+### 5.3.2 Non-Significant ≠ No Effect
+
+> *"A non-significant result only means the effect wasn't large enough to detect. It does NOT prove the null hypothesis is true."* [1, Ch. 2]
+
+Cohen [3] famously stated: "The null hypothesis is never true."
+
+### 5.3.3 p-values Are Probabilistic, Not Proof
+
+> *"If p < .05, we're saying 'this is unlikely IF the null were true.' We cannot logically conclude 'therefore the null is definitely false.'"* [1, Ch. 2]
+
+---
+
+# Part 6: Type I Errors, Type II Errors, and Power
+
+## 6.1 The Four Possible Outcomes
+
+When we make a decision about H₀, there are four possible outcomes [1, Ch. 2]:
+
+```{r error-table, echo=FALSE}
+error_df <- data.frame(
+ Decision = c("Reject H₀", "Fail to Reject H₀"),
+ `H₀ is True` = c("Type I Error (α) - False Positive", "Correct Decision"),
+ `H₀ is False` = c("Correct Decision (Power)", "Type II Error (β) - False Negative")
+)
+names(error_df) <- c("Decision", "H₀ is Actually TRUE", "H₀ is Actually FALSE")
+
+error_df %>%
+ kable(caption = "The Four Possible Outcomes in Hypothesis Testing") %>%
+ kable_styling(bootstrap_options = c("striped", "hover"), full_width = FALSE) %>%
+ column_spec(1, bold = TRUE)
+```
+
+## 6.2 Type I Error (α)
+
+**What is it?** Rejecting H₀ when it's actually true—concluding there's an effect when there isn't (false positive) [1, Ch. 2].
+
+**Probability:** α (typically set at 0.05)
+
+**Real-world example:** Declaring a drug effective when it actually does nothing.
+
+**At α = .05:** If we replicate 100 studies with NO real effect, we'd falsely detect an "effect" about 5 times!
+
+## 6.3 Type II Error (β)
+
+**What is it?** Failing to reject H₀ when it's actually false—missing a real effect (false negative) [1, Ch. 2].
+
+**Probability:** β (Cohen [4] recommends maximum β = 0.20)
+
+**Real-world example:** Declaring a drug ineffective when it actually works.
+
+**At β = .20:** We would miss 1 in 5 genuine effects.
+
+## 6.4 Statistical Power
+
+**What is power?** The probability of correctly detecting a real effect [1, Ch. 2].
+
+$$Power = 1 - \beta$$
+
+**Cohen's [4] recommendation:** Aim for power ≥ .80 (80% chance of detecting real effects).
+
+### 6.4.1 The Four Interconnected Quantities
+
+1. **Sample size (N)**
+2. **Effect size** in the population
+3. **Alpha level (α)**
+4. **Power (1 - β)**
+
+**Key principle:** Knowing any three, you can calculate the fourth!
+
+### 6.4.2 Power Analysis in R
+
+```{r power-analysis}
+# Power analysis for independent samples t-test
+if (requireNamespace("pwr", quietly = TRUE)) {
+ 
+ # Calculate required sample size for different effect sizes
+ # Assuming α = 0.05, power = 0.80
+ 
+ effect_sizes <- c(0.2, 0.5, 0.8)  # Small, medium, large (Cohen's d)
+ 
+ power_results <- sapply(effect_sizes, function(d) {
+   result <- pwr::pwr.t.test(d = d, sig.level = 0.05, power = 0.80, type = "two.sample")
+   ceiling(result$n)  # Round up to whole number
+ })
+ 
+ power_df <- data.frame(
+   Effect_Size = c("Small (d = 0.2)", "Medium (d = 0.5)", "Large (d = 0.8)"),
+   Cohens_d = effect_sizes,
+   Required_N_per_group = power_results
+ )
+ 
+ power_df %>%
+   kable(caption = "Required Sample Size per Group (α = 0.05, Power = 0.80)") %>%
+   kable_styling(bootstrap_options = c("striped", "hover"), full_width = FALSE)
+ 
+ cat("\nKey insight: Smaller effects require MUCH larger samples to detect!\n")
+}
+```
+
+### 6.4.3 Power Curve Visualization
+
+```{r power-curve, fig.height=5}
+if (requireNamespace("pwr", quietly = TRUE)) {
+ 
+ # Calculate power for different sample sizes
+ sample_sizes <- seq(10, 200, by = 10)
+ 
+ power_by_n <- data.frame(
+   N = rep(sample_sizes, 3),
+   Effect_Size = rep(c("Small (d=0.2)", "Medium (d=0.5)", "Large (d=0.8)"), each = length(sample_sizes)),
+   d = rep(c(0.2, 0.5, 0.8), each = length(sample_sizes))
+ ) %>%
+   rowwise() %>%
+   mutate(Power = pwr::pwr.t.test(n = N, d = d, sig.level = 0.05, type = "two.sample")$power) %>%
+   ungroup()
+ 
+ ggplot(power_by_n, aes(x = N, y = Power, color = Effect_Size)) +
+   geom_line(linewidth = 1.5) +
+   geom_hline(yintercept = 0.80, linetype = "dashed", color = "gray50") +
+   annotate("text", x = 180, y = 0.83, label = "Target Power = 0.80", color = "gray50") +
+   labs(title = "Statistical Power Increases with Sample Size",
+        subtitle = "Larger effects are easier to detect with smaller samples",
+        x = "Sample Size per Group", y = "Statistical Power",
+        color = "Effect Size") +
+   scale_y_continuous(limits = c(0, 1), labels = scales::percent) +
+   theme_minimal() +
+   theme(plot.title = element_text(hjust = 0.5, face = "bold"),
+         legend.position = "bottom")
+}
+```
+
+---
+
+# Part 7: Effect Sizes
+
+## 7.1 Why Effect Sizes Matter
+
+Field et al. [1, Ch. 2] argue that effect sizes solve the problems with NHST:
+
+> *"The use of effect sizes strikes a balance between using arbitrary cut-off points such as p < .05 and assessing whether an effect is meaningful within the research context."*
+
+**Key advantages:**
+1. **Standardized** = comparable across studies (meta-analysis)
+2. **Not dependent on sample size** (unlike p-values)
+3. **Allows objective evaluation** of practical importance
+4. **APA recommends** reporting effect sizes in all publications [5]
+
+## 7.2 Cohen's d: Standardized Mean Difference
+
+**What is Cohen's d?** It expresses the difference between two means in standard deviation units [4].
+
+$$d = \frac{\bar{X}_1 - \bar{X}_2}{s_{pooled}}$$
+
+Where $s_{pooled}$ is the pooled standard deviation.
+
+### 7.2.1 Cohen's Benchmarks
+
+Cohen [4] provided rough guidelines:
+
+| Effect Size | Cohen's d | Pearson's r | Variance Explained |
+|-------------|-----------|-------------|-------------------|
+| Small | 0.2 | 0.1 | 1% |
+| Medium | 0.5 | 0.3 | 9% |
+| Large | 0.8 | 0.5 | 25% |
+
+**Important caveat [1, Ch. 2]:** These are "canned" guidelines—not absolute rules. Effect size should be evaluated **within the research context**. A "small" effect on mortality might be hugely important!
+
+### 7.2.2 Calculating Cohen's d in R
+
+```{r cohens-d}
+# Calculate Cohen's d for the transmission comparison
+if (requireNamespace("effectsize", quietly = TRUE)) {
+ 
+ # Using effectsize package (modern approach)
+ d_result <- effectsize::cohens_d(mpg ~ am, data = mtcars)
+ print(d_result)
+ 
+ cat("\n=== INTERPRETATION ===\n")
+ cat("Cohen's d =", round(abs(d_result$Cohens_d), 2), "\n")
+ 
+ d_abs <- abs(d_result$Cohens_d)
+ if (d_abs < 0.2) {
+   cat("Magnitude: Negligible effect\n")
+ } else if (d_abs < 0.5) {
+   cat("Magnitude: Small effect\n")
+ } else if (d_abs < 0.8) {
+   cat("Magnitude: Medium effect\n")
+ } else {
+   cat("Magnitude: Large effect\n")
+ }
+ 
+ cat("\nThe difference in MPG between manual and automatic transmissions\n")
+ cat("is approximately", round(d_abs, 2), "standard deviations.\n")
+}
+```
+
+### 7.2.3 Manual Calculation for Understanding
+
+```{r cohens-d-manual}
+# Manual calculation of Cohen's d
+mean_auto <- mean(automatic)
+mean_manual <- mean(manual)
+n_auto <- length(automatic)
+n_manual <- length(manual)
+
+# Pooled standard deviation
+var_auto <- var(automatic)
+var_manual <- var(manual)
+pooled_var <- ((n_auto - 1) * var_auto + (n_manual - 1) * var_manual) / (n_auto + n_manual - 2)
+pooled_sd <- sqrt(pooled_var)
+
+# Cohen's d
+d_manual <- (mean_manual - mean_auto) / pooled_sd
+
+cat("=== MANUAL COHEN'S D CALCULATION ===\n")
+cat("Mean (Automatic):", round(mean_auto, 2), "\n")
+cat("Mean (Manual):", round(mean_manual, 2), "\n")
+cat("Pooled SD:", round(pooled_sd, 2), "\n")
+cat("Cohen's d:", round(d_manual, 2), "\n")
+```
+
+## 7.3 Pearson's r as Effect Size
+
+Field et al. [1, Ch. 2] prefer Pearson's r because it's bounded between 0 (no effect) and 1 (perfect effect).
+
+**Note:** r is not linear—r = .6 is NOT twice as big as r = .3!
+
+```{r r-effect-size}
+# Correlation between weight and MPG
+r_result <- cor.test(mtcars$wt, mtcars$mpg)
+
+cat("=== PEARSON'S r AS EFFECT SIZE ===\n")
+cat("r =", round(r_result$estimate, 3), "\n")
+cat("p-value:", format.pval(r_result$p.value, digits = 4), "\n")
+cat("95% CI: [", round(r_result$conf.int[1], 3), ",", round(r_result$conf.int[2], 3), "]\n\n")
+
+r_abs <- abs(r_result$estimate)
+cat("Variance explained (r²):", round(r_abs^2 * 100, 1), "%\n\n")
+
+if (r_abs < 0.1) {
+ cat("Magnitude: Negligible relationship\n")
+} else if (r_abs < 0.3) {
+ cat("Magnitude: Small relationship\n")
+} else if (r_abs < 0.5) {
+ cat("Magnitude: Medium relationship\n")
+} else {
+ cat("Magnitude: Large relationship\n")
+}
+```
+
+### 7.3.1 Visualizing the Relationship
+
+```{r visualize-correlation, fig.height=4}
+ggplot(mtcars, aes(x = wt, y = mpg)) +
+ geom_point(size = 3, alpha = 0.7, color = "steelblue") +
+ geom_smooth(method = "lm", se = TRUE, color = "red") +
+ labs(title = paste("Weight vs. MPG (r =", round(r_result$estimate, 2), ")"),
+      subtitle = paste("r² =", round(r_result$estimate^2, 2),
+                       "— Weight explains", round(r_result$estimate^2 * 100, 1),
+                       "% of variance in MPG"),
+      x = "Weight (1000 lbs)", y = "Miles Per Gallon") +
+ theme_minimal() +
+ theme(plot.title = element_text(hjust = 0.5, face = "bold"))
+```
+
+## 7.4 Complete Effect Size Example
+
+Let's tie everything together with a comprehensive example:
+
+```{r complete-example}
+# Compare earthquake magnitudes at high vs. low depth
+quakes_depth <- quakes %>%
+ mutate(depth_group = ifelse(depth > median(depth), "Deep", "Shallow"))
+
+# Hypothesis test
+depth_test <- t.test(mag ~ depth_group, data = quakes_depth)
+
+# Effect size
+if (requireNamespace("effectsize", quietly = TRUE)) {
+ depth_d <- effectsize::cohens_d(mag ~ depth_group, data = quakes_depth)
+}
+
+cat("=== COMPLETE ANALYSIS: Magnitude by Depth ===\n\n")
+
+# Descriptive statistics
+quakes_depth %>%
+ group_by(depth_group) %>%
+ summarise(
+   n = n(),
+   mean_mag = mean(mag),
+   sd_mag = sd(mag),
+   se_mag = sd(mag) / sqrt(n())
+ ) %>%
+ mutate(across(where(is.numeric), ~round(.x, 3))) %>%
+ kable(caption = "Descriptive Statistics by Depth Group") %>%
+ kable_styling(bootstrap_options = c("striped", "hover"), full_width = FALSE)
+
+cat("\n=== HYPOTHESIS TEST ===\n")
+cat("t =", round(depth_test$statistic, 3), "\n")
+cat("df =", round(depth_test$parameter, 1), "\n")
+cat("p-value =", format.pval(depth_test$p.value, digits = 4), "\n")
+cat("95% CI for difference: [", round(depth_test$conf.int[1], 3), ",",
+   round(depth_test$conf.int[2], 3), "]\n\n")
+
+cat("=== EFFECT SIZE ===\n")
+if (exists("depth_d")) {
+ cat("Cohen's d =", round(depth_d$Cohens_d, 3), "\n")
+ cat("95% CI: [", round(depth_d$CI_low, 3), ",", round(depth_d$CI_high, 3), "]\n")
+}
+
+cat("\n=== INTERPRETATION ===\n")
+if (depth_test$p.value < 0.05) {
+ cat("There is a statistically significant difference in earthquake magnitude\n")
+ cat("between deep and shallow earthquakes.\n")
+} else {
+ cat("There is no statistically significant difference in earthquake magnitude\n")
+ cat("between deep and shallow earthquakes.\n")
+}
+
+if (exists("depth_d")) {
+ d_abs <- abs(depth_d$Cohens_d)
+ if (d_abs < 0.2) {
+   cat("However, the effect size is negligible (d < 0.2),\n")
+   cat("suggesting little practical significance.\n")
+ } else if (d_abs < 0.5) {
+   cat("The effect size is small (0.2 ≤ d < 0.5).\n")
+ } else if (d_abs < 0.8) {
+   cat("The effect size is medium (0.5 ≤ d < 0.8).\n")
+ } else {
+   cat("The effect size is large (d ≥ 0.8).\n")
+ }
+}
+```
+
+---
+
+# Part 8: Controlling for Multiple Comparisons
+
+## 8.1 The Problem of Multiple Testing
+
+When we conduct multiple hypothesis tests, the probability of making at least one Type I error increases dramatically [1, Ch. 2].
+
+**Example:** If we conduct 20 tests at α = 0.05, the probability of at least one false positive is:
+
+$$P(\text{at least one Type I error}) = 1 - (1 - 0.05)^{20} = 0.64$$
+
+That's a 64% chance of at least one false positive!
+
+## 8.2 Common Corrections
+
+```{r multiple-testing}
+# Demonstrate multiple comparison corrections
+p_values <- c(0.001, 0.008, 0.039, 0.041, 0.042, 0.06, 0.074, 0.205, 0.212, 0.216)
+
+corrections_df <- data.frame(
+ Original_p = p_values,
+ Bonferroni = p.adjust(p_values, method = "bonferroni"),
+ Holm = p.adjust(p_values, method = "holm"),
+ BH_FDR = p.adjust(p_values, method = "BH")
+)
+
+corrections_df <- corrections_df %>%
+ mutate(across(everything(), ~round(.x, 4)))
+
+# Add significance indicators
+corrections_df <- corrections_df %>%
+ mutate(
+   Original_sig = ifelse(Original_p < 0.05, "*", ""),
+   Bonferroni_sig = ifelse(Bonferroni < 0.05, "*", ""),
+   Holm_sig = ifelse(Holm < 0.05, "*", ""),
+   BH_sig = ifelse(BH_FDR < 0.05, "*", "")
+ )
+
+corrections_df %>%
+ kable(caption = "Multiple Testing Corrections (* = significant at α = 0.05)") %>%
+ kable_styling(bootstrap_options = c("striped", "hover"), full_width = FALSE)
+
+cat("\n=== CORRECTION METHODS ===\n")
+cat("Bonferroni: Most conservative - divide α by number of tests\n")
+cat("Holm: Step-down procedure - more powerful than Bonferroni\n")
+cat("Benjamini-Hochberg (FDR): Controls false discovery rate - most lenient\n")
+```
+
+---
+
+# Part 9: Summary and Key Takeaways
+
+## 9.1 The Big Picture
+
+```{r summary-diagram, echo=FALSE}
+summary_df <- data.frame(
+ Concept = c(
+   "Model + Error",
+   "Sum of Squares (SS)",
+   "Variance",
+   "Standard Deviation",
+   "Standard Error",
+   "Confidence Interval",
+   "p-value",
+   "Effect Size",
+   "Power"
+ ),
+ Definition = c(
+   "Outcome = Model + Error — the fundamental equation",
+   "Sum of squared deviations from the mean",
+   "Average squared deviation (SS / df)",
+   "Square root of variance — in original units",
+   "SD of sample means — measures precision",
+   "Range likely containing the population parameter",
+   "Probability of data if H₀ is true",
+   "Standardized magnitude of effect",
+   "Probability of detecting a real effect"
+ ),
+ Key_Formula = c(
+   "Xᵢ = X̄ + εᵢ",
+   "Σ(Xᵢ - X̄)²",
+   "SS / (N-1)",
+   "√Variance",
+   "s / √N",
+   "X̄ ± (z × SE)",
+   "P(data | H₀)",
+   "d = (M₁-M₂)/SD",
+   "1 - β"
+ )
+)
+
+summary_df %>%
+ kable(caption = "Week 04 Key Concepts Summary") %>%
+ kable_styling(bootstrap_options = c("striped", "hover"), full_width = FALSE) %>%
+ column_spec(1, bold = TRUE)
+```
+
+## 9.2 Key Takeaways
+
+Based on Field et al. [1]:
+
+1. **Everything is Model + Error** — this is the foundation of statistics
+
+2. **Statistical significance ≠ practical importance** — always report effect sizes
+
+3. **The null is never exactly true** — Cohen [3] emphasized this repeatedly
+
+4. **p < .05 is arbitrary** — Fisher [2] chose it for convenience, not principle
+
+5. **Sample size matters** for power, not just for significance
+
+6. **Use confidence intervals** — they tell you more than p-values alone
+
+7. **Effect sizes provide context** — Cohen's d and r help assess practical importance
+
+## 9.3 Reporting Guidelines
+
+When reporting results, include [1, Ch. 9]:
+
+1. **Descriptive statistics:** Mean, SD, N for each group
+2. **Test statistic:** t, F, χ², etc. with degrees of freedom
+3. **p-value:** Exact value or inequality (e.g., p < .001)
+4. **Confidence interval:** Usually 95%
+5. **Effect size:** Cohen's d, r, η², etc. with interpretation
+
+**Example APA-style report:**
+> Manual transmission cars (M = 24.39, SD = 6.17) had significantly higher fuel efficiency than automatic transmission cars (M = 17.15, SD = 3.83), t(18.33) = 3.77, p = .001, 95% CI [3.21, 11.27], d = 1.41 (large effect).
+
+---
+
+# Part 10: Practice Exercises
+
+## Exercise 1: Calculate SS, Variance, and SD
+
+Using the following data: 5, 8, 12, 15, 20
+
+1. Calculate the mean
+2. Calculate each deviation from the mean
+3. Calculate the Sum of Squares (SS)
+4. Calculate the variance
+5. Calculate the standard deviation
+
+```{r exercise1, eval=FALSE}
+# Your code here
+data <- c(5, 8, 12, 15, 20)
+
+# Calculate mean
+mean_data <- ___
+
+# Calculate deviations
+deviations <- ___
+
+# Calculate SS
+SS <- ___
+
+# Calculate variance
+variance <- ___
+
+# Calculate SD
+sd_data <- ___
+```
+
+## Exercise 2: Confidence Interval
+
+Calculate a 95% confidence interval for the mean of `mtcars$hp`.
+
+```{r exercise2, eval=FALSE}
+# Your code here
+hp_mean <- ___
+hp_se <- ___
+ci_lower <- ___
+ci_upper <- ___
+```
+
+## Exercise 3: Complete Hypothesis Test with Effect Size
+
+Compare `mpg` between 4-cylinder and 8-cylinder cars in `mtcars`. Report:
+1. Descriptive statistics for both groups
+2. t-test results
+3. Cohen's d effect size
+4. Interpretation
+
+```{r exercise3, eval=FALSE}
+# Your code here
+```
+
+---
+
+# Glossary
+
+**Confidence Interval (CI):** A range of values within which the population parameter is likely to fall [1, Ch. 2].
+
+**Cohen's d:** A standardized effect size measuring the difference between means in SD units [4].
+
+**Degrees of Freedom (df):** The number of values free to vary in a calculation [1, Ch. 2].
+
+**Effect Size:** A standardized measure of the magnitude of an effect, independent of sample size [1, Ch. 2].
+
+**Null Hypothesis (H₀):** The hypothesis that no effect exists; any observed difference is due to chance [1, Ch. 2].
+
+**p-value:** The probability of obtaining the observed data (or more extreme) if the null hypothesis is true [1, Ch. 2].
+
+**Power:** The probability of correctly detecting a real effect (1 - β) [4].
+
+**Standard Deviation (SD):** A measure of the spread of scores around the mean, in original units [1, Ch. 2].
+
+**Standard Error (SE):** The standard deviation of sample means; measures precision of the sample mean estimate [1, Ch. 2].
+
+**Sum of Squares (SS):** The sum of squared deviations from the mean; measures total error [1, Ch. 2].
+
+**Type I Error (α):** Rejecting H₀ when it is true (false positive) [1, Ch. 2].
+
+**Type II Error (β):** Failing to reject H₀ when it is false (false negative) [1, Ch. 2].
+
+**Variance:** The average squared deviation from the mean (SS/df) [1, Ch. 2].
+
+---
+
+# References
+
+[1] A. Field, J. Miles, and Z. Field, *Discovering Statistics Using R*. London: SAGE Publications, 2012.
+
+[2] R. A. Fisher, *Statistical Methods for Research Workers*. Edinburgh: Oliver and Boyd, 1925.
+
+[3] J. Cohen, "Things I have learned (so far)," *American Psychologist*, vol. 45, no. 12, pp. 1304–1312, 1990.
+
+[4] J. Cohen, *Statistical Power Analysis for the Behavioral Sciences*, 2nd ed. Hillsdale, NJ: Lawrence Erlbaum Associates, 1988.
+
+[5] American Psychological Association, *Publication Manual of the American Psychological Association*, 7th ed. Washington, DC: APA, 2020.
+
+[6] J. Cohen, "The earth is round (p < .05)," *American Psychologist*, vol. 49, no. 12, pp. 997–1003, 1994.
+
+---
+
+# Session Information
+
+```{r session-info}
+sessionInfo()
+```
+
+---
+
+<div style="text-align: center; padding: 20px; background-color: #f0f0f0; border-radius: 10px; margin-top: 30px;">
+**End of Week 04: R for Data Analytics Tutorial**
+
+*ANLY 500 - Analytics I*
+
+*Harrisburg University*
+</div>

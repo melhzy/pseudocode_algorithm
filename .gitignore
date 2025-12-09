@@ -1,0 +1,55 @@
+# Pseudocode Algorithm Project - Git Ignore
+
+# Archive folder - do not check in anything
+archive/
+
+# Requirements folder - do not check in
+requirements/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+ENV/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# R
+.Rhistory
+.RData
+.Rproj.user
+
+# Downloaded papers (optional - comment out if you want to track them)
+papers/PMC*.pdf
+papers/PMC*.json
+papers/PMC*.xml
+
+# System files
+.DS_Store
+Thumbs.db

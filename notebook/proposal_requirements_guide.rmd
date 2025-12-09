@@ -1,0 +1,1817 @@
+---
+title: "Dissertation Proposal Requirements Guide"
+author: "Pseudocode Algorithm Project"
+date: "Last Updated: `r format(Sys.Date(), '%B %d, %Y')`"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    toc_depth: 3
+    theme: cosmo
+    highlight: tango
+    code_folding: hide
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  warning = FALSE,
+  message = FALSE,
+  fig.align = 'center',
+  fig.width = 8,
+  fig.height = 5
+)
+```
+
+# 1. Introduction
+
+## 1.1 Overview
+
+This guide provides a comprehensive overview of dissertation proposal requirements based on the templates and guidelines available in the project.
+
+**Reference Templates Location:** `requirements/proposal/`
+
+**This Guide Location:** `notebook/proposal_requirements_guide.rmd`
+
+Available reference documents:
+
+- Dissertation Proposal Template_Published Papers Version.docx
+- Dissertation Proposal Template_Traditional Version.docx  
+- Proposal Defense Guide.docx
+
+## 1.2 Purpose
+
+This guide will help you:
+
+1. Understand the two **dissertation proposal** format options
+2. Identify required components for each **proposal** format
+3. Prepare for your **proposal defense** (not final dissertation defense)
+4. Navigate the **proposal development** process
+5. Meet committee expectations **for proposal approval**
+
+**Important:** This guide covers the **proposal phase** only—the stage where you seek committee approval to conduct your research. The full dissertation comes after proposal approval.
+
+---
+
+# 2. Two Proposal Formats
+
+## 2.1 Format Option 1: Published Papers Version
+
+### 2.1.1 When to Choose This Format
+
+- You have published or submitted research papers
+- Papers relate to a coherent research theme
+- You are first author or made substantial contributions
+- Papers meet minimum publication standards
+
+### 2.1.2 Key Advantages
+
+- Leverage existing published work
+- Demonstrate research productivity
+- Showcase peer-reviewed contributions
+- Potentially faster completion
+
+### 2.1.3 Structure Overview
+
+```
+Chapter 1: Introduction and Background
+Chapter 2: Comprehensive Literature Review
+Chapters 3-N: Published/Submitted Papers
+Final Chapter: Integration and Synthesis
+Conclusions and Future Directions
+```
+
+---
+
+## 2.2 Format Option 2: Traditional Version
+
+### 2.2.1 When to Choose This Format
+
+- Conducting original research for dissertation
+- Following conventional dissertation structure
+- No prior publications related to dissertation topic
+- Prefer traditional academic format
+
+### 2.2.2 Key Advantages
+
+- Standard academic format
+- Clear progression of research process
+- Comprehensive methodology chapter
+- Unified research narrative
+
+### 2.2.3 Structure Overview
+
+```
+Chapter 1: Introduction
+Chapter 2: Literature Review
+Chapter 3: Methodology
+Chapter 4: Results
+Chapter 5: Discussion and Conclusions
+```
+
+---
+
+# 3. Common Requirements (Both Formats)
+
+## 3.1 3.1 Essential Components
+
+### 3.1.1 Clear Research Questions
+
+**Requirements:**
+
+- Well-defined and focused
+- Answerable through proposed methodology  
+- Significant contribution to the field
+- Aligned with program learning outcomes
+
+**Example Structure:**
+
+```
+Primary Research Question:
+  - Main question driving the research
+
+Secondary Research Questions:
+  - Supporting questions
+  - Specific aspects of primary question
+  - Measurable outcomes
+```
+
+### 3.1.2 Comprehensive Literature Review
+
+**Required Elements:**
+
+- Current state of knowledge (last 5-10 years emphasized)
+- Theoretical foundations
+- Key seminal works
+- Identification of research gaps
+- Critical analysis of prior work
+- Conceptual framework
+
+**Quality Standards:**
+
+- Minimum 50-75 scholarly sources
+- Peer-reviewed journals prioritized
+- Recent publications emphasized
+- Organized thematically, not chronologically
+
+### 3.1.3 Rigorous Methodology
+
+**Must Include:**
+
+- Research design justification
+- Data collection procedures
+- Analysis methods
+- Validation strategies
+- Ethical considerations
+- Timeline and feasibility
+
+### 3.1.4 Expected Contributions
+
+**Types of Contributions:**
+
+- **Theoretical:** Advancing theory in the field
+- **Methodological:** Novel approaches or tools
+- **Practical:** Applications and implications
+- **Empirical:** New findings or insights
+
+---
+
+# 4. Published Papers Version - Detailed Requirements
+
+## 4.1 4.1 Chapter 1: Introduction
+
+### 4.1.1 Required Content
+
+**Background and Context**
+
+- Field overview
+- Problem statement
+- Research motivation
+- Evolution of the topic
+
+**Research Objectives**
+
+- Primary objectives
+- Specific aims
+- Relationship between papers
+- Overarching research questions
+
+**Significance**
+
+- Theoretical importance
+- Practical implications
+- Who benefits from this research
+- Contribution to knowledge
+
+**Organization**
+
+- Overview of each paper/chapter
+- Logical flow between chapters
+- Integration strategy
+
+### 4.1.2 Length Guidelines
+
+- Typically 15-25 pages
+- Comprehensive but concise
+
+---
+
+## 4.2 4.2 Chapter 2: Literature Review
+
+### 4.2.1 Structure
+
+**Theoretical Framework**
+
+- Foundational theories
+- Conceptual models
+- Key concepts and definitions
+
+**Empirical Research Review**
+
+- Major studies in the field
+- Methodological approaches
+- Key findings and conclusions
+- Debates and controversies
+
+**Synthesis and Gaps**
+
+- Common themes across literature
+- Contradictions or unresolved issues
+- Identified research gaps
+- How your research addresses gaps
+
+### 4.2.2 Integration Strategy
+
+- Must synthesize findings across papers
+- Show coherence of research program
+- Connect to overarching questions
+
+### 4.2.3 Length Guidelines
+
+- Typically 30-50 pages
+- Comprehensive coverage required
+
+---
+
+## 4.3 Chapters 3-N: Published Papers
+
+### For Each Paper Chapter
+
+**Required Components:**
+
+1. **Chapter Introduction (2-3 pages)**
+   - Context within dissertation
+   - Connection to research questions
+   - Relationship to other papers
+   - Publication details
+
+2. **Paper Content**
+   - Full paper or adapted version
+   - Follow dissertation formatting
+   - Maintain academic standards
+
+3. **Transition/Bridge (1-2 pages)**
+   - Summary of key findings
+   - Link to next chapter
+   - Contribution to overall thesis
+
+### 4.3.2 Publication Requirements
+
+**Acceptable Publication Venues:**
+
+- Peer-reviewed journals
+- Refereed conference proceedings
+- Book chapters in academic press
+- Submitted papers (with committee approval)
+
+**Quality Standards:**
+
+- Must be related to dissertation theme
+- Student as first author preferred
+- Clear demonstration of student's contribution
+- Meets field-specific publication standards
+
+---
+
+## 4.4 Final Chapter: Integration and Synthesis
+
+### 4.4.1 Required Content
+
+**Synthesis of Findings**
+
+- Common themes across papers
+- Complementary insights
+- Collective contribution
+
+**Addressing Research Questions**
+
+- How papers collectively answer questions
+- Gaps that remain
+- New questions raised
+
+**Theoretical and Practical Implications**
+
+- Theoretical contributions
+- Practical applications
+- Policy implications (if applicable)
+
+**Limitations**
+
+- Study limitations across papers
+- Generalizability concerns
+- Methodological constraints
+
+**Future Research Directions**
+
+- Unanswered questions
+- New avenues opened
+- Recommendations for researchers
+
+### 4.4.2 Length Guidelines
+
+- Typically 20-30 pages
+- Comprehensive synthesis required
+
+---
+
+# 5. 5. Traditional Version - Detailed Requirements
+
+## 5.1 Chapter 1: Introduction
+
+### 5.1.1 Required Content
+
+**Background**
+
+- Context and setting
+- Problem identification
+- Importance of the problem
+
+**Problem Statement**
+
+- Clear articulation of the problem
+- Scope and boundaries
+- Assumptions
+
+**Research Questions/Hypotheses**
+
+```
+Research Question 1: [Clear, specific question]
+  Hypothesis 1a: [Testable hypothesis]
+  Hypothesis 1b: [Testable hypothesis]
+
+Research Question 2: [Clear, specific question]
+  Hypothesis 2a: [Testable hypothesis]
+```
+
+**Significance and Contribution**
+
+- Why this research matters
+- Expected contributions
+- Stakeholders who benefit
+
+**Proposed Dissertation Organization**
+
+- Chapter summaries (what you plan to write)
+- Logical flow of proposed research
+
+### 5.1.2 Length Guidelines
+
+- 15-20 pages typical
+
+---
+
+## 5.2 5.2 Chapter 2: Literature Review
+
+### 5.2.1 Organization Options
+
+**Option A: Thematic Organization**
+
+- Organize by themes or concepts
+- Show relationships between themes
+- Most common approach
+
+**Option B: Theoretical Organization**
+
+- Organize by theoretical frameworks
+- Compare and contrast theories
+- Show theoretical evolution
+
+**Option C: Methodological Organization**
+
+- Organize by research methods
+- Critique methodological approaches
+- Justify chosen methodology
+
+### 5.2.2 Critical Analysis Required
+
+**Not just summary - must include:**
+
+- Evaluation of strengths/weaknesses
+- Identification of methodological issues
+- Recognition of contradictory findings
+- Assessment of evidence quality
+
+### 5.2.3 Conceptual Framework
+
+**Must include visual representation:**
+
+```
+[Independent Variables] → [Mediating Variables] → [Dependent Variables]
+                    ↓
+           [Moderating Variables]
+```
+
+### 5.2.4 Length Guidelines
+
+- 30-60 pages typical
+- Comprehensive coverage required
+
+---
+
+## 5.3 Chapter 3: Methodology
+
+### 5.3.1 Research Design
+
+**Required Elements:**
+
+1. **Design Type**
+   - Experimental, quasi-experimental, observational, etc.
+   - Rationale for design choice
+   - Alignment with research questions
+
+2. **Participants/Sample**
+   - Population description
+   - Sampling strategy (random, stratified, convenience, etc.)
+   - Sample size justification
+   - Power analysis (for quantitative studies)
+   - Recruitment procedures
+
+3. **Data Sources**
+   - Primary vs secondary data
+   - Data collection instruments
+   - Reliability and validity evidence
+
+### 5.3.2 Data Collection
+
+**Required Details:**
+
+- Procedures and protocols
+- Timeline for data collection
+- Data management plan
+- Quality control measures
+
+### 5.3.3 Data Analysis
+
+**Must Specify:**
+
+- Statistical methods (for quantitative)
+- Analysis procedures (for qualitative)
+- Software/tools to be used
+- Steps in analysis process
+- How research questions will be answered
+
+### 5.3.4 Ethical Considerations
+
+**Required Documentation:**
+
+- IRB approval status
+- Informed consent procedures
+- Confidentiality measures
+- Risk mitigation strategies
+
+### 5.3.5 Length Guidelines
+
+- 20-40 pages typical
+- Highly detailed required
+
+---
+
+## 5.4 5.4 Chapters 4-5: Results and Discussion
+
+### 5.4.1 Chapter 4: Results
+
+**Organization:**
+
+- By research question
+- By hypothesis
+- By analysis type
+
+**Required Elements:**
+
+- Descriptive statistics
+- Inferential statistics (if applicable)
+- Tables and figures
+- Narrative explanation
+- Assumption testing results
+
+**Note:** For proposal, this chapter is **anticipated/expected** results
+
+### 5.4.2 Chapter 5: Discussion (Proposed)
+
+**Required Sections for Proposal:**
+
+1. How findings will be summarized
+2. How results will be interpreted in context of literature
+3. Expected theoretical implications
+4. Potential practical implications
+5. Anticipated limitations
+6. Future research directions
+7. Expected conclusions
+
+**Note:** For the **proposal**, this outlines your planned discussion approach, not actual discussion of results.
+
+### 5.4.3 Length Guidelines
+
+- Results: 20-40 pages
+- Discussion: 20-30 pages
+
+---
+
+# 6. Evaluation Rubrics
+
+## 6.1 Overview of Evaluation Process
+
+Your proposal will be evaluated using a formal rubric covering **11 dimensions** across two categories:
+
+1. **Written Proposal (7 dimensions):** Evaluates the quality of your written document
+2. **Oral Presentation (4 dimensions):** Evaluates your defense presentation and Q&A
+
+**Scoring Scale:** Each dimension is scored 1-10 across four scholarship levels:
+
+- **Exemplary Scholarship:** 9-10 points
+- **Developed Scholarship:** 6-8 points ← **REQUIRED TO PASS**
+- **Developing Scholarship:** 3-5 points
+- **Emerging Scholarship:** 1-2 points
+
+**To Pass:** You must demonstrate **"Developed Scholarship" or better (6+ points)** in ALL dimensions.
+
+---
+
+## 6.2 Written Proposal Rubric (7 Dimensions)
+
+### 6.2.1 Development of Research Questions
+
+```{r rubric-rq, echo=FALSE}
+library(knitr)
+
+rq_rubric <- data.frame(
+  Level = c("Exemplary (9-10)", "Developed (6-8)", "Developing (3-5)", "Emerging (1-2)"),
+  Criteria = c(
+    "Questions are well-developed and significant to the field. Research has potential to address critical issues and make a significant contribution.",
+    "Questions are well-developed and justified by existing literature. Potential contribution is well-documented.",
+    "Questions are well-developed, but significance to the field is not clear. Clear justification for the research is missing.",
+    "Research questions are not well developed. Not clear what makes the research interesting or important."
+  )
+)
+
+kable(rq_rubric, col.names = c("Score Level", "Criteria"))
+```
+
+---
+
+### 6.2.2 Thoroughness of Literature Review
+
+```{r rubric-lit, echo=FALSE}
+lit_rubric <- data.frame(
+  Level = c("Exemplary (9-10)", "Developed (6-8)", "Developing (3-5)", "Emerging (1-2)"),
+  Criteria = c(
+    "Thorough review that integrates existing literature in a new and insightful way. Identifies gaps in the literature and compellingly argues how current research will address that gap. Citations are robust and consistently formatted.",
+    "Thorough review that draws connections among perspectives and integrates the literature in a meaningful way. Draws clear relationship between existing literature and research question. Demonstrates clear mastery of the field. Citations are sufficient and consistently formatted.",
+    "Provides general discussion of previous findings. However, limited viewpoints are represented. Work is mostly summarized, and weak connections are made to the research question. Missing clear understanding of key concepts. Citations are lacking and inconsistently formatted.",
+    "Literature review does not include important references to the subject matter. No connections are made to the research question. Literature review primarily summarizes work at a surface level. Citations are insufficient and improperly formatted."
+  )
+)
+
+kable(lit_rubric, col.names = c("Score Level", "Criteria"))
+```
+
+---
+
+### 6.2.3 Methodological Sophistication
+
+```{r rubric-method, echo=FALSE}
+method_rubric <- data.frame(
+  Level = c("Exemplary (9-10)", "Developed (6-8)", "Developing (3-5)", "Emerging (1-2)"),
+  Criteria = c(
+    "Creative method and design are presented with clear explanation of methodological choices. Alternative means of analysis are considered and discussed.",
+    "Robust method and design sufficient to address research questions. Connection between method and analyses understood and developed. Multiple methods of analysis are considered.",
+    "Exhibits basic understanding of research method and design. Identifies limitations of approach – but not fully addressed. Connection between method and data analysis not clearly developed.",
+    "Methods do not adequately address the questions. Does not consider potential biases/limitations of method."
+  )
+)
+
+kable(method_rubric, col.names = c("Score Level", "Criteria"))
+```
+
+---
+
+### 6.2.4 Measurement of Constructs
+
+```{r rubric-measure, echo=FALSE}
+measure_rubric <- data.frame(
+  Level = c("Exemplary (9-10)", "Developed (6-8)", "Developing (3-5)", "Emerging (1-2)"),
+  Criteria = c(
+    "Creative measurement approach with clear explanation of measurement choices. Alternative means of measurement are considered and discussed.",
+    "Creative measurement approach to address limitations of existing approaches or measurements. Connection between measurement and research questions understood.",
+    "Exhibits basic understanding of measurement or feature engineering. Identifies limitations of measurement – but not fully addressed.",
+    "Methods section does not adequately address measurement or feature engineering. Does not consider potential biases/limitations of measurement."
+  )
+)
+
+kable(measure_rubric, col.names = c("Score Level", "Criteria"))
+```
+
+---
+
+### 6.2.5 Clarity of Writing and Scholarly Presentation
+
+```{r rubric-writing, echo=FALSE}
+writing_rubric <- data.frame(
+  Level = c("Exemplary (9-10)", "Developed (6-8)", "Developing (3-5)", "Emerging (1-2)"),
+  Criteria = c(
+    "Writing is fluid, precise, and clear. Tone is professional and scholarly. Voice is authoritative and conveys clear understanding. Formatting enhances flow and readability.",
+    "Writing is fluid, precise, and clear. Tone is professional and scholarly. Adequate transitions between ideas but lacks clear authoritative voice. Formatting is clear and consistent.",
+    "Writing is organized and clear. May lack adequate transitions and scientific precision. Tone is informal and lacking depth. Formatting is consistent but difficult to read.",
+    "Heavy reliance on jargon. Difficult to read. Terms not sufficiently defined. Formatting is inconsistent and unreadable."
+  )
+)
+
+kable(writing_rubric, col.names = c("Score Level", "Criteria"))
+```
+
+---
+
+### 6.2.6 Ethical Concerns Addressed
+
+```{r rubric-ethics, echo=FALSE}
+ethics_rubric <- data.frame(
+  Level = c("Exemplary (9-10)", "Developed (6-8)", "Developing (3-5)", "Emerging (1-2)"),
+  Criteria = c(
+    "Specific ethical concerns are addressed and resolved.",
+    "General ethical issues (fairness, risks/benefits) are discussed/considered.",
+    "Limited consideration of basic ethical issues.",
+    "Ethical issues not considered."
+  )
+)
+
+kable(ethics_rubric, col.names = c("Score Level", "Criteria"))
+```
+
+---
+
+### 6.2.7 Feasibility
+
+```{r rubric-feasibility, echo=FALSE}
+feasibility_rubric <- data.frame(
+  Level = c("Exemplary (9-10)", "Developed (6-8)", "Developing (3-5)", "Emerging (1-2)"),
+  Criteria = c(
+    "Provides clear plan for completing dissertation in a timely manner. Plan addresses resources and skills needed along with alternative solutions.",
+    "Provides general plan for dissertation completion. Plan addresses resources and skills needed.",
+    "Needs improvement on a plan to complete the dissertation. Plan does not consider the resources or skills needed for completion.",
+    "Does not provide a plan for completing the dissertation."
+  )
+)
+
+kable(feasibility_rubric, col.names = c("Score Level", "Criteria"))
+```
+
+---
+
+## 6.3 Oral Presentation Rubric (4 Dimensions)
+
+### 6.3.1 Presentation Content
+
+```{r rubric-content, echo=FALSE}
+content_rubric <- data.frame(
+  Level = c("Exemplary (9-10)", "Developed (6-8)", "Developing (3-5)", "Emerging (1-2)"),
+  Criteria = c(
+    "Introduction provides clear and concise organization. Main purpose of research is identified and well argued. Research questions are clear. Contributions to the field are discussed. Method is laid out with feasible plan for completion.",
+    "Main points are explained and provide sufficient detail. Research questions are clear. Method is clear with plan for execution.",
+    "Introduction outlines the main issues. Some details are missing. Methods are generally clear.",
+    "Introduction is underdeveloped. Purpose is unclear. Main sections missing critical information."
+  )
+)
+
+kable(content_rubric, col.names = c("Score Level", "Criteria"))
+```
+
+---
+
+### 6.3.2 Presentation Organization
+
+```{r rubric-org, echo=FALSE}
+org_rubric <- data.frame(
+  Level = c("Exemplary (9-10)", "Developed (6-8)", "Developing (3-5)", "Emerging (1-2)"),
+  Criteria = c(
+    "Excellent organization. Introduction outlines full presentation. Main points lead directly from one to the other. Clear summary and conclusions.",
+    "Good organization. Introduction provides an overview of presentation. Transitions are adequate.",
+    "Overall organization is appropriate. Some abrupt content changes are noted.",
+    "Difficult to follow. Moves back and forth through main ideas."
+  )
+)
+
+kable(org_rubric, col.names = c("Score Level", "Criteria"))
+```
+
+---
+
+### 6.3.3 Presentation Mechanics (Slides/PPT Quality)
+
+```{r rubric-slides, echo=FALSE}
+slides_rubric <- data.frame(
+  Level = c("Exemplary (9-10)", "Developed (6-8)", "Developing (3-5)", "Emerging (1-2)"),
+  Criteria = c(
+    "Slides are creative and provide balance between words and illustrations. Models are well diagrammed. Designed to highlight main points as well as subtle issues of interest.",
+    "Slides are well constructed and informative. Convey appropriate amount of information. Easy to read and follow main points.",
+    "Slides are organized and present relevant information. Too many words on most slides. Little effort to make them engaging.",
+    "Individual slides do not follow an overall plan. Numerous errors and formatting issues are evident."
+  )
+)
+
+kable(slides_rubric, col.names = c("Score Level", "Criteria"))
+```
+
+**Key PPT Guidelines:**
+
+- **Balance:** Mix text with visuals, diagrams, and models
+- **Readability:** Large fonts, clear contrast, minimal text per slide
+- **Engagement:** Make slides interesting, not just text dumps
+- **Consistency:** Follow a coherent visual style throughout
+- **Accuracy:** No spelling errors or formatting inconsistencies
+
+---
+
+### 6.3.4 Ability to Answer Questions
+
+```{r rubric-qa, echo=FALSE}
+qa_rubric <- data.frame(
+  Level = c("Exemplary (9-10)", "Developed (6-8)", "Developing (3-5)", "Emerging (1-2)"),
+  Criteria = c(
+    "Questions are answered completely with full explanations provided for all answers. Alternatives are fully considered and addressed. Exhibits flexibility when presented options.",
+    "Questions are understood and answered completely. Explanations are provided for most answers. Alternative possibilities are considered.",
+    "Generally understands the questions and provides basic answers. Does not consider alternatives. Some parts of questions are not addressed.",
+    "Questions are poorly understood. Answers are insufficient."
+  )
+)
+
+kable(qa_rubric, col.names = c("Score Level", "Criteria"))
+```
+
+---
+
+## 6.4 Pass/Fail Criteria Based on Rubric Scores
+
+### 6.4.1 Pass (Approved)
+
+**Criteria:** All committee members agree student demonstrates **"Developed Scholarship" or better (6+ points)** in ALL 11 rubric dimensions.
+
+**Outcome:**
+- Proposal approved
+- May require minor revisions
+- Can proceed with dissertation research
+
+---
+
+### 6.4.2 Pass with Revisions
+
+**Criteria:** Majority of committee members indicate **"Developing Scholarship" (3-5 points)** in one or more dimensions.
+
+**Outcome:**
+- Conditional approval
+- Specific revisions required
+- Revisions must be reviewed and approved by committee
+- Proposal milestone approved only after revisions complete
+
+---
+
+### 6.4.3 Fail (Not Approved)
+
+**Criteria:** Majority of committee members indicate **"Emerging Scholarship" (1-2 points)** in several dimensions.
+
+**Outcome:**
+- Proposal not approved
+- Major revisions required
+- May need to resubmit entire proposal
+- May need to redo oral defense
+
+---
+
+## 6.5 Self-Assessment Checklist
+
+**Before submitting your proposal, evaluate yourself on each dimension:**
+
+**Written Proposal:**
+- [ ] Research questions are significant and well-justified (Score 6+?)
+- [ ] Literature review integrates and critiques (not just summarizes) (Score 6+?)
+- [ ] Methodology is detailed, appropriate, and considers alternatives (Score 6+?)
+- [ ] Measurement approach is clear and limitations addressed (Score 6+?)
+- [ ] Writing is scholarly, clear, and authoritative (Score 6+?)
+- [ ] Ethical concerns are discussed and addressed (Score 6+?)
+- [ ] Feasibility plan includes resources and timeline (Score 6+?)
+
+**Oral Presentation:**
+- [ ] Content covers all key points with clear organization (Score 6+?)
+- [ ] Organization flows logically with smooth transitions (Score 6+?)
+- [ ] Slides are well-designed, balanced, and engaging (Score 6+?)
+- [ ] Can answer questions completely and consider alternatives (Score 6+?)
+
+**If any item is below 6 points, revise before submission!**
+
+---
+
+# 7. Proposal Defense Requirements
+
+## 7.1 Timeline
+
+**Typical Process:**
+
+1. **Submit proposal:** 2-4 weeks before defense
+2. **Committee review:** Committee reads and prepares
+3. **Defense scheduled:** Coordinate with all members
+4. **Defense date:** Presentation and Q&A
+5. **Outcome communicated:** Same day or shortly after
+
+## 6.2 Defense Structure
+
+### 6.2.1 Part 1: Presentation (20-30 minutes)
+
+**Required Content:**
+
+1. **Introduction (5 minutes)**
+   - Problem and significance
+   - Research questions
+
+2. **Literature Review (5-7 minutes)**
+   - Key theories
+   - Research gaps
+   - Conceptual framework
+
+3. **Methodology (10-12 minutes)**
+   - Design and procedures
+   - Analysis plan
+   - Timeline
+
+4. **Expected Contributions (3-5 minutes)**
+   - Theoretical contributions
+   - Practical implications
+
+### 6.2.2 Part 2: Q&A Session (30-60 minutes)
+
+**Types of Questions to Expect:**
+
+**Clarification Questions:**
+- "Can you explain how you will measure X?"
+- "What do you mean by Y?"
+
+**Challenge Questions:**
+- "Why did you choose this approach over Z?"
+- "How will you address [potential issue]?"
+
+**Feasibility Questions:**
+- "Is this timeline realistic?"
+- "Do you have access to needed resources?"
+
+**Extension Questions:**
+- "Have you considered [alternative approach]?"
+- "What if you find [unexpected result]?"
+
+### 6.2.3 Part 3: Committee Deliberation
+
+- Committee discusses privately
+- Decision on outcome
+- Feedback provided
+
+## 6.3 Possible Outcomes
+
+### 6.3.1 Pass (Unconditional)
+
+- Proposal approved as submitted
+- Proceed with research immediately
+- Minor editorial changes only
+
+### 6.3.2 Pass with Minor Revisions
+
+**Most common outcome**
+
+- Specific revisions required
+- Submit to chair for approval
+- No second defense needed
+- Typical revisions:
+  - Clarify methodology
+  - Add specific references
+  - Refine research questions
+  - Adjust timeline
+
+### 6.3.3 Pass with Major Revisions
+
+- Substantial changes required
+- Revise and resubmit to committee
+- May require second defense
+- Typical revisions:
+  - Significant methodology changes
+  - Major literature review expansion
+  - Reframe research questions
+  - Add new analyses
+
+### 6.3.4 Fail
+
+**Rare outcome**
+
+- Major conceptual or methodological problems
+- Complete rework required
+- New defense after revisions
+
+---
+
+# 8. Defense Preparation
+
+## 8.1 Before the Defense
+
+### 8.1.1 Practice Your Presentation
+
+**Rehearsal Strategy:**
+
+```r
+# Create presentation timeline
+timeline <- data.frame(
+  Section = c("Introduction", "Literature", "Methodology", "Contributions"),
+  Minutes = c(5, 7, 12, 4),
+  Slides = c(3, 4, 8, 3)
+)
+
+timeline$Cumulative_Time <- cumsum(timeline$Minutes)
+print(timeline)
+```
+
+- Practice 3-5 times minimum
+- Get feedback from peers
+- Time yourself
+- Prepare for technical issues
+
+### 8.1.2 Anticipate Questions
+
+**Common Question Categories:**
+
+| Category | Example Questions | Preparation Strategy |
+|----------|------------------|---------------------|
+| Methodology | Why this design? | Know alternatives and tradeoffs |
+| Literature | Did you consider [X]? | Comprehensive literature review |
+| Feasibility | Can you complete this? | Realistic timeline and resources |
+| Contribution | What's novel here? | Clear articulation of gap |
+| Analysis | How will you analyze? | Detailed analysis plan |
+
+### 8.1.3 Prepare Materials
+
+**Checklist:**
+
+- [ ] Presentation slides (PDF backup)
+- [ ] Handouts for committee (optional)
+- [ ] Extra copies of proposal
+- [ ] Notes for reference
+- [ ] Technical setup tested
+- [ ] Professional attire prepared
+
+## 8.2 During the Defense
+
+### 8.2.1 Presentation Tips
+
+**Do:**
+
+- Speak clearly and at moderate pace
+- Make eye contact with all committee members
+- Show enthusiasm for your research
+- Use visuals effectively
+- Stay within time limit
+
+**Don't:**
+
+- Read directly from slides
+- Use jargon without explanation
+- Rush through methodology
+- Dismiss committee concerns
+- Argue defensively
+
+### 8.2.2 Q&A Strategy
+
+**Effective Response Pattern:**
+
+1. **Listen carefully** to the full question
+2. **Pause** to think (1-3 seconds is fine)
+3. **Clarify** if needed: "Are you asking about X or Y?"
+4. **Answer** directly and concisely
+5. **Check** if answer was sufficient: "Does that address your question?"
+
+**Handling Difficult Questions:**
+
+- "That's an excellent point I'll need to consider further"
+- "I hadn't thought about it from that angle - thank you"
+- "Let me think about how to address that in the methodology"
+- "I'm not familiar with that study - can you share the reference?"
+
+---
+
+# 9. Writing Standards and Format
+
+## 9.1 Formatting Requirements
+
+### 9.1.1 Document Format
+
+```
+Font: Times New Roman, 12pt
+Line Spacing: Double-spaced (text)
+Margins: 1 inch (all sides)
+Page Numbers: Bottom center or top right
+Headers: As required by style guide
+```
+
+### 9.1.2 Citation Style
+
+**Typically APA 7th Edition**
+
+**In-text citations:**
+```
+Single author: (Smith, 2024)
+Two authors: (Smith & Jones, 2024)  
+Three or more: (Smith et al., 2024)
+Multiple sources: (Jones, 2023; Smith, 2024)
+```
+
+**Reference format:**
+```
+Journal article:
+  Author, A. A., & Author, B. B. (Year). Title of article. 
+  Journal Name, volume(issue), pages. https://doi.org/xxxxx
+
+Book:
+  Author, A. A. (Year). Title of book. Publisher.
+```
+
+### 9.1.3 Tables and Figures
+
+**Requirements:**
+
+- Numbered consecutively
+- Descriptive titles
+- Cited in text before appearance
+- APA format for tables
+- High resolution figures
+- Permission documented (if not original)
+
+**Example table format:**
+
+```
+Table 1
+
+Descriptive Statistics for Study Variables
+
+Variable          M      SD     Min    Max
+─────────────────────────────────────────
+Age             35.2    8.7     22     65
+Experience      8.5     5.2     1      30
+Satisfaction    4.2     0.8     1      5
+─────────────────────────────────────────
+
+Note. N = 250. M = mean; SD = standard deviation.
+```
+
+---
+
+# 10. Timeline and Project Management
+
+**Context:** This section covers the timeline for the **entire dissertation process** to help you understand where the proposal fits in the overall journey.
+
+## 10.1 Complete Dissertation Timeline (Proposal Through Defense)
+
+### 10.1.1 Phase 1: Proposal Development (3-6 months) ← **YOU ARE HERE**
+
+```
+Month 1-2: Literature review and research questions
+Month 3-4: Methodology development
+Month 5: Writing and revisions
+Month 6: Defense preparation and defense
+```
+
+### 10.1.2 Phase 2: IRB and Preparation (1-3 months) ← **After Proposal Approval**
+
+```
+If human subjects research:
+  - Prepare IRB application
+  - Submit for review
+  - Address reviewer comments
+  - Obtain approval
+
+Note: This phase begins AFTER your proposal is approved.
+```
+
+### 10.1.3 Phase 3: Data Collection (3-12 months)
+
+```
+Varies by design:
+  - Surveys: 1-3 months
+  - Experiments: 3-6 months
+  - Longitudinal: 6-12+ months
+  - Secondary data: 1-2 months (access and preparation)
+```
+
+### 10.1.4 Phase 4: Analysis and Writing (6-12 months)
+
+```
+Month 1-3: Data cleaning and preliminary analysis
+Month 4-6: Full analysis and results writing
+Month 7-9: Discussion and conclusions
+Month 10-12: Revisions and committee review
+```
+
+### 10.1.5 Phase 5: Dissertation Defense (2-4 months)
+
+```
+Month 1-2: Committee review and feedback
+Month 3: Defense preparation
+Month 4: Defense and final revisions
+```
+
+## 10.2 Project Management Tools
+
+### 10.2.1 Gantt Chart Example
+
+```r
+# Create a simple timeline visualization
+library(ggplot2)
+
+timeline <- data.frame(
+  Phase = c("Proposal", "IRB", "Data Collection", 
+            "Analysis", "Writing", "Defense"),
+  Start = c(1, 7, 10, 16, 20, 30),
+  Duration = c(6, 3, 6, 4, 10, 3)
+)
+
+timeline$End <- timeline$Start + timeline$Duration
+
+ggplot(timeline, aes(x = Start, xend = End, y = Phase, yend = Phase)) +
+  geom_segment(size = 10, color = "steelblue") +
+  labs(title = "Dissertation Timeline",
+       x = "Months from Start",
+       y = "Phase") +
+  theme_minimal()
+```
+
+### 10.2.2 Milestone Tracking
+
+**Key Milestones (Full Dissertation Process):**
+
+**PROPOSAL PHASE (Current Focus):**
+
+- [ ] Topic selection and advisor meeting
+- [ ] Literature review complete (draft)
+- [ ] Methodology drafted
+- [ ] Proposal complete (draft)
+- [ ] Advisor approval of proposal
+- [ ] Committee receives proposal
+- [ ] Proposal defense date set
+- [ ] Proposal defense passed
+
+**POST-PROPOSAL PHASE (After Approval):**
+
+- [ ] IRB approval (if needed)
+- [ ] Data collection complete
+- [ ] Analysis complete
+- [ ] Results chapter drafted
+- [ ] Full dissertation draft complete
+- [ ] Committee approval to defend
+- [ ] Dissertation defense passed
+- [ ] Final revisions complete
+- [ ] Final submission
+
+---
+
+# 11. Common Pitfalls and How to Avoid Them
+
+## 11.1 Top 10 Proposal Problems
+
+### 11.1.1 Scope Too Broad
+
+**Problem:**
+```
+"I will study all factors affecting organizational success"
+```
+
+**Solution:**
+```
+"I will examine how leadership style and organizational culture 
+influence employee engagement in technology startups"
+```
+
+### 11.1.2 Unclear Research Questions
+
+**Problem:**
+```
+"How do things work in organizations?"
+```
+
+**Solution:**
+```
+"How does transformational leadership impact employee innovation 
+behavior, and is this relationship mediated by psychological safety?"
+```
+
+### 11.1.3 Insufficient Literature Review
+
+**Problem:**
+- 20 sources, mostly textbooks
+- No recent publications
+- Missing key theorists
+
+**Solution:**
+- 60-80 peer-reviewed sources
+- Majority from last 5 years
+- Comprehensive theory coverage
+
+### 11.1.4 Weak Methodology
+
+**Problem:**
+- "I'll collect some surveys"
+- No power analysis
+- Unclear sampling strategy
+
+**Solution:**
+- Detailed procedures
+- Sample size justified (N = 250, power = .80, α = .05)
+- Clear recruitment plan
+
+### 11.1.5 Unrealistic Timeline
+
+**Problem:**
+```
+Month 1: Collect data from 500 participants
+Month 2: Analyze and write
+Month 3: Defend
+```
+
+**Solution:**
+```
+Months 1-3: Pilot test and refine instruments
+Months 4-6: Data collection (allowing for delays)
+Months 7-8: Analysis
+Months 9-12: Writing and revisions
+```
+
+### 11.1.6 No Clear Contribution
+
+**Problem:**
+- "Others have studied this"
+- Can't articulate what's new
+
+**Solution:**
+- "This extends [Theory X] to [new context]"
+- "First study to examine [specific relationship]"
+- "Addresses methodological limitation in prior work"
+
+### 11.1.7 Methodology-Research Question Mismatch
+
+**Problem:**
+- Causal question with correlational design
+- Exploratory question with confirmatory approach
+
+**Solution:**
+- Align design with questions
+- Justify design choice
+- Acknowledge limitations
+
+### 11.1.8 Ignoring Committee Feedback
+
+**Problem:**
+- Submit same draft repeatedly
+- Don't address comments
+- Defensive responses
+
+**Solution:**
+- Carefully review all feedback
+- Make requested changes
+- Explain reasoning for decisions
+
+### 11.1.9 Poor Writing Quality
+
+**Problem:**
+- Grammatical errors throughout
+- Unclear sentences
+- Disorganized structure
+
+**Solution:**
+- Multiple revisions
+- Peer review
+- Writing center consultation
+- Professional editing (if allowed)
+
+### 11.1.10 Inadequate Preparation for Defense
+
+**Problem:**
+- Reading from slides
+- Can't answer basic questions
+- Unfamiliar with recent literature
+
+**Solution:**
+- Practice presentation 5+ times
+- Anticipate questions
+- Re-read key literature before defense
+
+---
+
+# 12. Committee Expectations
+
+## 12.1 What Committees Look For
+
+### 12.1.1 Feasibility
+
+**Questions They Ask:**
+
+- Can this be completed in reasonable time?
+- Are resources available?
+- Does student have necessary skills?
+- Is scope manageable?
+
+**How to Demonstrate:**
+
+- Realistic timeline with contingencies
+- Evidence of access to data/participants
+- Pilot work or preliminary analysis
+- Clear project management plan
+
+### 12.1.2 Significance
+
+**Questions They Ask:**
+
+- Why does this matter?
+- What's the contribution?
+- Who cares about this research?
+
+**How to Demonstrate:**
+
+- Clear articulation of gap
+- Connection to theory
+- Practical implications
+- Multiple stakeholder benefits
+
+### 12.1.3 Rigor
+
+**Questions They Ask:**
+
+- Is methodology appropriate?
+- Are there threats to validity?
+- How will findings be validated?
+
+**How to Demonstrate:**
+
+- Detailed methodology
+- Address limitations
+- Validation strategies
+- Appropriate analysis plan
+
+### 12.1.4 Clarity
+
+**Questions They Ask:**
+
+- Are ideas clearly expressed?
+- Is logic coherent?
+- Can I follow the argument?
+
+**How to Demonstrate:**
+
+- Clear writing
+- Logical organization
+- Effective transitions
+- Visual aids (conceptual models)
+
+## 12.2 Working with Your Committee
+
+### 12.2.1 Chair Relationship
+
+**Your chair is your primary advisor**
+
+**Responsibilities:**
+
+- Guide proposal development
+- Review multiple drafts
+- Provide detailed feedback
+- Advocate for you in committee
+
+**Best Practices:**
+
+- Regular meetings (every 2-4 weeks)
+- Share drafts early
+- Implement feedback promptly
+- Communicate challenges
+
+### 12.2.2 Committee Members
+
+**Each brings expertise**
+
+**Best Practices:**
+
+- Know their research areas
+- Leverage their strengths
+- Address their concerns
+- Keep them informed
+
+### 12.2.3 Managing Conflicting Feedback
+
+**When committee members disagree:**
+
+1. Discuss with chair first
+2. Identify common ground
+3. Propose compromise
+4. Document decisions
+
+---
+
+# 13. Resources and Support
+
+## 13.1 University Resources
+
+### 13.1.1 Academic Support
+
+```
+Writing Center
+  - Proposal review
+  - Writing workshops
+  - One-on-one consultations
+
+Statistical Consulting
+  - Methodology design
+  - Power analysis
+  - Analysis planning
+
+Library Services
+  - Literature search training
+  - Citation management
+  - Research data management
+```
+
+### 13.1.2 Technical Support
+
+- IRB Office: Ethics and compliance
+- Graduate School: Formatting and deadlines
+- IT Services: Software and data security
+- Research Office: Funding opportunities
+
+## 13.2 External Resources
+
+### 13.2.1 Citation Management
+
+- Zotero (free)
+- Mendeley (free)
+- EndNote (institutional license)
+- RefWorks (institutional license)
+
+### 13.2.2 Writing Tools
+
+- Grammarly: Grammar and style
+- Hemingway App: Readability
+- Scrivener: Long document organization
+- LaTeX: Technical document preparation
+
+### 13.2.3 Project Management
+
+- Trello: Task organization
+- Notion: Knowledge management
+- Microsoft Project: Gantt charts
+- Todoist: Task tracking
+
+---
+
+# 14. Next Steps and Action Items
+
+## 14.1 Immediate Actions (Week 1-2)
+
+- [ ] Choose proposal format (Published Papers vs Traditional)
+- [ ] Review proposal templates thoroughly
+- [ ] Schedule initial meeting with advisor
+- [ ] Identify potential committee members
+- [ ] Set up citation management system
+
+## 14.2 Short-term Actions (Month 1-2)
+
+- [ ] Conduct preliminary literature search
+- [ ] Draft research questions
+- [ ] Outline methodology
+- [ ] Create project timeline
+- [ ] Begin proposal writing
+
+## 14.3 Medium-term Actions (Month 3-4)
+
+- [ ] Complete literature review draft
+- [ ] Finalize methodology
+- [ ] Share drafts with advisor
+- [ ] Incorporate feedback
+- [ ] Prepare for defense
+
+## 14.4 Long-term Actions (Month 5-6)
+
+- [ ] Submit proposal to committee
+- [ ] Prepare defense presentation
+- [ ] Conduct defense
+- [ ] Implement revisions
+- [ ] Begin dissertation research
+
+---
+
+# 15. Final Thoughts
+
+## 15.1 Keys to Success
+
+### 15.1.1 Start Early
+
+- Proposal development takes 4-6 months minimum
+- Early start allows for multiple revisions
+- Time to incorporate feedback
+
+### 15.1.2 Communicate Regularly
+
+- Meet with advisor every 2-4 weeks
+- Update committee on progress
+- Ask questions when unclear
+
+### 15.1.3 Be Flexible
+
+- Expect multiple rounds of revisions
+- Be open to changing direction
+- Adapt based on feedback
+
+### 15.1.4 Stay Organized
+
+- Keep detailed notes and references
+- Track versions and revisions
+- Maintain timeline and milestones
+
+### 15.1.5 Seek Support
+
+- Use available resources
+- Connect with peers
+- Don't isolate yourself
+
+### 15.1.6 Manage Stress
+
+- Build in breaks and self-care
+- Celebrate small wins
+- Maintain work-life balance
+
+## 15.2 Remember
+
+**The dissertation proposal is:**
+
+- A learning process and first major milestone
+- A demonstration of research planning competence
+- Your plan and permission to conduct research
+- An entry into scholarly community
+
+**The proposal is not:**
+
+- A perfect, flawless document
+- The final dissertation itself
+- Your most important work (that comes after approval)
+- Done in isolation
+
+## You Can Do This!
+
+> "The proposal doesn't have to be perfect. 
+>  It has to be approved."
+>  
+> - Adapted for proposal milestone
+
+---
+
+# 16. Appendix: Helpful Templates
+
+## 16.1 Research Question Template
+
+```
+Research Question [Number]: [Clear, focused question]
+
+Independent Variable(s): [What you're manipulating/examining]
+Dependent Variable(s): [What you're measuring]
+Moderator(s): [Conditions that change the relationship]
+Mediator(s): [Variables that explain the relationship]
+
+Hypothesis [Number.Letter]: [Specific, testable prediction]
+
+Rationale: [Theory or literature supporting this hypothesis]
+```
+
+## 16.2 Literature Review Outline Template
+
+```
+I. Introduction
+   A. Overview of topic
+   B. Search strategy
+   C. Organization of review
+
+II. Theoretical Framework
+   A. Theory 1
+      1. Core concepts
+      2. Application to topic
+   B. Theory 2
+      1. Core concepts
+      2. Application to topic
+   C. Synthesis
+
+III. Empirical Research
+   A. Theme 1
+      1. Key studies
+      2. Findings
+      3. Limitations
+   B. Theme 2
+      [same structure]
+   C. Theme 3
+      [same structure]
+
+IV. Research Gaps and Study Rationale
+   A. Identified gaps
+   B. How current study addresses gaps
+   C. Expected contributions
+
+V. Conclusion
+   A. Summary
+   B. Transition to methodology
+```
+
+## 16.3 Defense Presentation Outline
+
+```
+Slide 1: Title
+  - Title, your name, date, committee
+
+Slide 2-3: Introduction
+  - Problem statement
+  - Why it matters
+  - Research questions
+
+Slide 4-6: Literature Review
+  - Theoretical framework diagram
+  - Key findings from literature
+  - Research gaps
+
+Slide 7-12: Methodology
+  - Research design
+  - Participants/sample
+  - Procedures
+  - Data collection
+  - Analysis plan
+  - Timeline
+
+Slide 13-14: Expected Contributions
+  - Theoretical contributions
+  - Practical implications
+  - Significance
+
+Slide 15: Questions
+  - Thank committee
+  - Open for questions
+```
+
+---
+
+# 17. Contact Information and Resources
+
+## 17.1 Key Contacts
+
+**Dissertation Support:**
+
+- Dissertation Advisor: [Primary contact]
+- Committee Members: [Expertise areas]
+- Program Director: [Administrative questions]
+- Graduate School: [Formatting and deadlines]
+
+## 17.2 Reference Documents
+
+**Templates Location:** `requirements/proposal/`
+
+1. Dissertation Proposal Template_Published Papers Version.docx
+2. Dissertation Proposal Template_Traditional Version.docx
+3. Proposal Defense Guide.docx
+
+**This Guide Location:** `notebook/proposal_requirements_guide.rmd`
+
+## 17.3 Additional Resources
+
+**University Handbook:**
+
+- Dissertation formatting guidelines
+- Submission procedures
+- Defense scheduling
+
+**Style Guides:**
+
+- APA Publication Manual (7th Edition)
+- Field-specific style guides
+- University dissertation style guide
+
+---
+
+# 18. Success Stories and Examples
+
+## 18.1 What Makes a Strong Proposal?
+
+### 18.1.1 Example: Clear Research Question
+
+**Weak:**
+```
+How does leadership affect employees?
+```
+
+**Strong:**
+```
+How does servant leadership influence employee organizational 
+citizenship behavior, and is this relationship mediated by 
+organizational trust and moderated by power distance orientation?
+```
+
+### 18.1.2 Example: Justified Methodology
+
+**Weak:**
+```
+I will use surveys because they are convenient.
+```
+
+**Strong:**
+```
+A cross-sectional survey design is appropriate for this study 
+because it allows for: (a) examination of relationships between 
+variables (Creswell, 2018), (b) collection of data from a large, 
+geographically dispersed sample (Fowler, 2014), and (c) cost-
+effective data collection given resource constraints (Dillman 
+et al., 2014). The cross-sectional design is justified as the 
+research questions focus on relationships rather than causal 
+effects, and the theoretical model does not require temporal 
+precedence (Maxwell & Loomis, 2003).
+```
+
+## 18.2 Learn from Successful Proposals
+
+**Recommended Actions:**
+
+1. Ask advisor for examples of successful proposals
+2. Review dissertations in your field
+3. Attend proposal defenses if allowed
+4. Join dissertation writing groups
+5. Read "how to write a dissertation" books
+
+---
+
+# 19. Summary
+
+## 19.1 Key Takeaways
+
+**Format Selection (For Your Proposal):**
+
+- Choose proposal format that aligns with your situation
+- Discuss with advisor before committing
+- Both formats require equal rigor
+
+**Proposal Development:**
+
+- Allow 4-6 months for proposal development
+- Multiple revisions are normal before defense
+- Committee feedback improves your proposal
+
+**Proposal Defense Preparation:**
+
+- Practice your proposal presentation multiple times
+- Anticipate questions about methodology and feasibility
+- Stay confident and professional during defense
+
+**Success Factors (For Proposal Approval):**
+
+- Clear research questions
+- Comprehensive literature review
+- Rigorous and feasible methodology
+- Realistic timeline for research
+- Regular advisor communication
+
+## 19.2 Final Encouragement
+
+**You are capable of completing this PROPOSAL milestone!**
+
+Thousands of students successfully defend their **dissertation proposals** each year. With:
+
+- Careful planning
+- Hard work on your proposal
+- Good support from your committee
+- Persistence through revisions
+
+**You will join them in getting proposal approval!**
+
+Remember: This is just the first major milestone. Once your proposal is approved, you'll move forward to conduct your actual research and complete your dissertation.
+
+---
+
+## 19.3 Questions?
+
+Contact your dissertation advisor to discuss:
+
+- Proposal format selection
+- Proposal development timeline
+- Committee formation for proposal defense
+- Resource needs for proposed research
+- Any concerns about the proposal process
+
+**Good luck with your dissertation proposal development and defense!**
