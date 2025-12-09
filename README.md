@@ -5,6 +5,7 @@ A comprehensive educational resource for understanding machine learning algorith
 ## 📚 Overview
 
 This repository provides:
+
 - **Detailed Pseudocode Examples** - Step-by-step algorithm implementations
 - **R Markdown Presentations** - Interactive slides with code examples
 - **Literature Collection Tools** - Scripts to download research papers from PubMed Central
@@ -44,6 +45,7 @@ pseudocode_algorithm/
 ### 1. Algorithm Pseudocode Examples
 
 #### Random Forest
+
 - **File:** `examples/random_forest.txt`
 - **Presentation:** `examples/random_forest.rmd`
 - **Topics Covered:**
@@ -55,6 +57,7 @@ pseudocode_algorithm/
 - **References:** Breiman (2001), Heineman et al. (2009)
 
 #### XGBoost
+
 - **File:** `examples/xgboost.txt`
 - **Presentation:** `examples/xgboost.rmd`
 - **Topics Covered:**
@@ -67,7 +70,7 @@ pseudocode_algorithm/
 
 ### 2. Dissertation Proposal Requirements Guide
 
-**📖 [View the Guide](https://YOUR-USERNAME.github.io/pseudocode_algorithm/)**
+**📖 [View the Guide](https://melhzy.github.io/pseudocode_algorithm/)**
 
 A comprehensive 1000+ line guide covering:
 
@@ -82,6 +85,7 @@ A comprehensive 1000+ line guide covering:
 - **Templates and Checklists:** Ready-to-use resources
 
 **Key Features:**
+
 - ✅ Detailed rubrics with 4 scholarship levels (Exemplary, Developed, Developing, Emerging)
 - ✅ Self-assessment checklist
 - ✅ PPT/presentation guidelines
@@ -94,11 +98,13 @@ A comprehensive 1000+ line guide covering:
 ### Prerequisites
 
 **For R Markdown Presentations:**
+
 ```r
 install.packages(c("rmarkdown", "knitr", "randomForest", "xgboost", "caret", "ggplot2"))
 ```
 
 **For Literature Download Scripts:**
+
 ```bash
 pip install requests pandas
 ```
@@ -108,14 +114,16 @@ pip install requests pandas
 **Quick Start:**
 
 1. **Clone the repository:**
+
 ```bash
-git clone https://github.com/YOUR-USERNAME/pseudocode_algorithm.git
+git clone https://github.com/melhzy/pseudocode_algorithm.git
 cd pseudocode_algorithm
 ```
 
 2. **Render the proposal guide:**
-   
+
    **Option A - RStudio (Recommended):**
+
    - Open `notebook/proposal_requirements_guide.rmd` in RStudio
    - Click the **Knit** button
    - Move the HTML to root:
@@ -124,21 +132,22 @@ cd pseudocode_algorithm
      ```
 
    **Option B - R Command Line:**
+
    ```r
    rmarkdown::render(
      "notebook/proposal_requirements_guide.rmd",
      output_file = file.path(getwd(), "proposal_requirements_guide.html")
    )
    ```
-
 3. **Enable GitHub Pages:**
+
    - Go to **Settings** → **Pages**
    - Source: `main` branch, `/ (root)` folder
    - Click **Save**
-
 4. **View your guide at:**
+
    ```
-   https://YOUR-USERNAME.github.io/pseudocode_algorithm/
+   https://melhzy.github.io/pseudocode_algorithm/
    ```
 
 See [`GITHUB_PAGES_SETUP.md`](GITHUB_PAGES_SETUP.md) for detailed instructions.
@@ -146,6 +155,7 @@ See [`GITHUB_PAGES_SETUP.md`](GITHUB_PAGES_SETUP.md) for detailed instructions.
 ### Viewing Presentations Locally
 
 **Open RMD files in RStudio:**
+
 ```r
 # For Random Forest presentation
 rmarkdown::render("examples/random_forest.rmd")
@@ -157,10 +167,11 @@ rmarkdown::render("examples/xgboost.rmd")
 ### Using Literature Download Scripts
 
 1. **Set up your NCBI API key:**
+
    - Get your API key from: https://www.ncbi.nlm.nih.gov/account/settings/
    - Place it in `archive/ncbi_api_key.txt` (this file is gitignored)
-
 2. **Download papers:**
+
 ```bash
 # Single keyword search
 python scripts/utils/literature_downloader.py "random forest" --max-results 10
@@ -229,7 +240,7 @@ rmarkdown::render(
 
 This repository is configured for GitHub Pages. The proposal guide is available at:
 
-**https://YOUR-USERNAME.github.io/pseudocode_algorithm/**
+**https://melhzy.github.io/pseudocode_algorithm/**
 
 To enable GitHub Pages for your fork:
 
@@ -300,6 +311,7 @@ This project is licensed under the terms specified in the `LICENSE` file.
 ## 📞 Contact
 
 For questions about:
+
 - **Algorithm content:** Review examples and presentations
 - **Literature downloads:** Check scripts README
 - **Proposal guide:** See guide sections 17 (Contact Information)
